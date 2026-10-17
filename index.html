@@ -354,8 +354,9 @@ body.apresentacao .controles{display:none}
         <button class="btn" id="btn-limpar-ensaio">Remover simulados</button>
         <label class="chk">Sensibilidade do agrupamento: <b id="val-sim">62</b>%</label>
         <input type="range" id="slider-sim" min="45" max="90" value="62" style="width:100%;accent-color:#F28C28">
-        <label class="chk">Rigor do filtro de assunto: <b id="val-rel">30</b>%</label>
-        <input type="range" id="slider-rel" min="0" max="60" value="30" style="width:100%;accent-color:#F28C28">
+        <label class="chk"><input type="checkbox" id="chk-rel" checked> Filtro de assunto ligado</label>
+        <label class="chk">Corte de relevância (<span id="modo-rel">contraste</span>): <b id="val-rel">-5</b>%</label>
+        <input type="range" id="slider-rel" min="-60" max="70" value="-5" style="width:100%;accent-color:#F28C28">
         <label class="chk"><input type="checkbox" id="chk-sem" checked> Usar modelo semântico</label>
         <button class="btn btn-mini" id="btn-sem-teste" type="button">Testar modelo</button> <span class="dica" id="sem-teste" style="color:var(--n3)"></span>
         <h3>Calibração (conjunto de teste)</h3>
@@ -659,20 +660,29 @@ const Motor = (function () {
   function cos(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }   // vetores já normalizados
   const semEscala = c => Math.max(0, Math.min(1, (c - 0.15) / 0.6));    // cosseno 0.15→0, 0.75→1 (calibrado: sinônimos ≈0.55–0.6, não relacionados ≈0.03)
   const mediana = v => { const x = v.slice().sort((p, q) => p - q), m = x.length >> 1; return x.length ? (x.length % 2 ? x[m] : (x[m - 1] + x[m]) / 2) : 0; };
-  // Relevância de cada resposta = o maior entre: proximidade ao tema da pergunta e proximidade ao conjunto das demais respostas
-  function relevancias(lista, sem, cv) {
+  // Relevância de cada resposta (maior = mais pertinente). Modos:
+  //  ctx        proximidade ao tema da pergunta
+  //  centroide  proximidade às demais respostas (fraco: respostas aleatórias se parecem entre si)
+  //  max        o maior dos dois
+  //  contraste  proximidade ao tema MENOS a maior proximidade a assuntos do cotidiano sem relação (âncoras)
+  function relevancias(lista, sem, cv, modo) {
+    modo = modo || sem.modo || 'contraste';
     const m = new Map();
     const cand = lista.map(r => ({ r, v: sem.vec(vk(r)) })).filter(x => x.v);
     const soma = new Float64Array(cv.length); cand.forEach(x => { for (let i = 0; i < soma.length; i++) soma[i] += x.v[i]; });
+    const offs = (sem.off ? sem.off() : []).filter(o => cos(o, cv) < 0.35);   // descarta âncoras que tenham a ver com o tema da sala
     cand.forEach(x => {
-      let sc = cos(x.v, cv);
+      const sc = cos(x.v, cv);
+      let cen = sc;
       if (cand.length >= 4) {
         const o = new Float64Array(soma.length); let n = 0;
         for (let i = 0; i < o.length; i++) { o[i] = soma[i] - x.v[i]; n += o[i] * o[i]; }
-        n = Math.sqrt(n) || 1; let c2 = 0; for (let i = 0; i < o.length; i++) c2 += x.v[i] * o[i] / n;
-        sc = Math.max(sc, c2);
+        n = Math.sqrt(n) || 1; cen = 0; for (let i = 0; i < o.length; i++) cen += x.v[i] * o[i] / n;
       }
-      m.set(x.r.id, sc);
+      let v = sc;
+      if (modo === 'centroide') v = cen; else if (modo === 'max') v = Math.max(sc, cen);
+      else if (modo === 'contraste' && offs.length) { let mo = -1; offs.forEach(o => { const c = cos(x.v, o); if (c > mo) mo = c; }); v = sc - mo; }
+      m.set(x.r.id, v);
     });
     return m;
   }
@@ -692,10 +702,7 @@ const Motor = (function () {
       autos0.forEach(r => { if (lixo(r.resposta)) fora.set(r.id, 'lixo'); });
       const cv = sem && sem.ctx ? sem.ctx(gk) : null;
       const relv = cv ? relevancias(autos0.filter(r => !fora.has(r.id)), sem, cv) : new Map();
-      if (cv && sem.corte > 0) {
-        const med = mediana(Array.from(relv.values()));
-        relv.forEach((c, id) => { if (c < sem.corte && c < med * 0.7) fora.set(id, 'tema'); });
-      }
+      if (cv && sem.corte != null) relv.forEach((c, id) => { if (c < sem.corte) fora.set(id, 'tema'); });
       const autos = autos0.filter(r => !fora.has(r.id)).map(r => ({ r, k: chave(r.resposta) }))
         .sort((x, y) => x.k < y.k ? -1 : x.k > y.k ? 1 : (x.r.id < y.r.id ? -1 : 1));
       // 2) pesos de raridade (IDF) das palavras desta pergunta
@@ -1072,7 +1079,7 @@ function htmlPlano(p) {
   return '<b>⏱ ≈ ' + Math.round(p.usado) + ' min de ' + p.total + ' min</b> ' + (p.folga >= 0 ? '(sobram ' + Math.round(p.folga) + ' min)' : '<span style="color:#ff8f86">(estoura em ' + Math.round(-p.folga) + ' min!)</span>') + '<div class="barra"><i style="width:' + pct + '%"></i></div><small style="color:var(--n3)">Inclui 3 min de entrada, tempo de cada rodada, debate e 2 min de encerramento.</small>';
 }
 
-const M = { app: false, nick: null, sala: null, geral: false, convite: null, publicaInit: false, senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.62, relevancia: 0.30, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
+const M = { app: false, nick: null, sala: null, geral: false, convite: null, publicaInit: false, senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.62, relevancia: -0.05, relModo: 'contraste', relOn: true, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
 
 async function medEntrar(nick, pwd, silencioso) {
   const er = $('med-erro'); er.textContent = '';
@@ -1160,8 +1167,9 @@ async function recarregarRows(render) {
 /* ---- Modelo semântico (opcional, só no navegador do mediador; os participantes nunca baixam nada) ---- */
 const SEM_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
 const SEM_MODELO = 'Xenova/paraphrase-multilingual-MiniLM-L12-v2';
+const OFF_TXT = ['comida', 'sobremesa', 'fruta', 'feijoada', 'futebol', 'esporte', 'praia', 'férias', 'carnaval', 'festa', 'música', 'violão', 'samba', 'novela', 'filme', 'cachorro', 'gato', 'animais', 'chuva', 'clima', 'carro esportivo', 'bicicleta', 'brinquedo', 'roupa', 'moda', 'dormir', 'cerveja', 'viagem de turismo'];
 const Sem = {
-  estado: 'off', vecs: new Map(), ctx: new Map(), embed: null, erro: '',
+  estado: 'off', vecs: new Map(), ctx: new Map(), embed: null, erro: '', offVecs: null,
   ligado() { return $('chk-sem') ? $('chk-sem').checked : true; },
   vec(t) { return this.estado === 'pronto' && this.ligado() ? this.vecs.get(t) : undefined; },
   ctxDe(k) { return this.estado === 'pronto' && this.ligado() ? this.ctx.get(k) : undefined; },
@@ -1194,13 +1202,14 @@ const Sem = {
       const t = Motor.expandir(r.resposta); if (t && !this.vecs.has(t)) falta.add(t);
       const k = r.secao_id + '|' + r.pergunta_idx; if (!this.ctx.has(k)) ctxs.set(k, [r.secao_titulo, r.pergunta].filter(Boolean).join('. '));
     });
+    if (!this.offVecs) this.offVecs = await this.embed(OFF_TXT);
     const L = Array.from(falta), C = Array.from(ctxs.entries());
     if (!L.length && !C.length) return false;
     for (let i = 0; i < L.length; i += 32) { const lote = L.slice(i, i + 32), v = await this.embed(lote); lote.forEach((t, j) => this.vecs.set(t, v[j])); }
     if (C.length) { const v = await this.embed(C.map(c => c[1])); C.forEach((c, j) => this.ctx.set(c[0], v[j])); }
     return true;
   },
-  vista() { return { vec: t => this.vec(t), ctx: k => this.ctxDe(k), corte: M.relevancia }; }
+  vista() { return { vec: t => this.vec(t), ctx: k => this.ctxDe(k), off: () => this.offVecs || [], modo: M.relModo, corte: M.relOn ? M.relevancia : null }; }
 };
 /* ---- Calibração (só desenvolvedor): mede o modelo real com um conjunto de teste e sugere os melhores valores ---- */
 const CAL_REL = `Competências humanas fundamentais | Empatia | ok
@@ -1318,38 +1327,45 @@ const CAL_GRP = `0 | IA
 1 | Burocracia
 1 | Burocracia da Anvisa
 1 | Demora na aprovação`;
-const CAL = { corte: null, limiar: null };
+const CAL = { corte: null, limiar: null, modo: null };
 async function calibrar() {
   const out = $('cal-out'); CAL.corte = CAL.limiar = null; $('btn-cal-aplicar').disabled = true;
   if (Sem.estado !== 'pronto') { out.textContent = 'O modelo semântico ainda não carregou.'; return; }
   const linhas = [];
   let txt = '';
-  // --- relevância ---
+  // --- relevância: compara os 4 métodos ---
   const rel = $('cal-rel').value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a.length >= 3 && a[1]);
   if (rel.length) {
     const rows = rel.map((a, i) => ({ id: 'c' + i, secao_id: a[0], pergunta_idx: 0, secao_titulo: '', pergunta: a[0], resposta: a[1], fora: /^f/i.test(a[2]) }));
     await Sem.garantir(rows);
     const por = new Map(); rows.forEach(r => { if (!por.has(r.secao_id)) por.set(r.secao_id, []); por.get(r.secao_id).push(r); });
-    const pts = [];
-    por.forEach((lista, k) => {
-      const m = Motor.relevancias(lista, { vec: t => Sem.vecs.get(t) }, Sem.ctx.get(k + '|0'));
-      const med = Motor.mediana(Array.from(m.values()));
-      lista.forEach(r => { if (m.has(r.id)) pts.push({ r, s: m.get(r.id), med }); });
+    const nomes = { ctx: 'só o tema da pergunta', centroide: 'só as demais respostas', max: 'maior dos dois (versão 3.2)', contraste: 'tema menos assuntos sem relação' };
+    let melhorGeral = null; txt += 'RELEVÂNCIA (' + rows.length + ' respostas; ' + rows.filter(r => r.fora).length + ' fora do assunto)\n';
+    ['ctx', 'centroide', 'max', 'contraste'].forEach(modo => {
+      const pts = [];
+      por.forEach((lista, k) => {
+        const m = Motor.relevancias(lista, { vec: t => Sem.vecs.get(t), off: () => Sem.offVecs || [] }, Sem.ctx.get(k + '|0'), modo);
+        lista.forEach(r => { if (m.has(r.id)) pts.push({ r, s: m.get(r.id) }); });
+      });
+      const ok = pts.filter(p => !p.r.fora), fo = pts.filter(p => p.r.fora);
+      let win = 0; ok.forEach(a => fo.forEach(b => { win += a.s > b.s ? 1 : a.s === b.s ? 0.5 : 0; }));
+      const auc = ok.length && fo.length ? win / (ok.length * fo.length) : 0;
+      const vals = Array.from(new Set(pts.map(p => p.s))).sort((x, y) => x - y);
+      let melhor = null;
+      for (let i = 0; i <= vals.length; i++) {
+        const c = i === 0 ? vals[0] - 0.01 : i === vals.length ? vals[i - 1] + 0.01 : (vals[i - 1] + vals[i]) / 2;
+        let tp = 0, fp = 0, fn = 0; pts.forEach(p => { const pred = p.s < c; if (pred && p.r.fora) tp++; else if (pred) fp++; else if (p.r.fora) fn++; });
+        const P = tp + fp ? tp / (tp + fp) : 1, R = tp + fn ? tp / (tp + fn) : 0, f = (P + R) ? (1.25 * P * R) / (0.25 * P + R) : 0;
+        if (!melhor || f > melhor.f + 1e-9) melhor = { c, f, tp, fp, fn, P, R };
+      }
+      const med = a => a.length ? Math.round(Motor.mediana(a.map(p => p.s)) * 100) : 0;
+      txt += '  ' + modo.toUpperCase() + ' (' + nomes[modo] + '): separação (AUC) ' + auc.toFixed(2) + ' · mediana ok ' + med(ok) + '% × fora ' + med(fo) + '% · melhor corte ' + Math.round(melhor.c * 100) + '% pega ' + Math.round(melhor.R * 100) + '% do fora, anula ' + melhor.fp + ' boa(s)\n';
+      if (!melhorGeral || auc > melhorGeral.auc + 1e-9) melhorGeral = { modo, auc, c: melhor.c, pts };
     });
-    let melhor = null; const tab = [];
-    for (let c = 0.05; c <= 0.601; c += 0.025) {
-      let tp = 0, fp = 0, fn = 0;
-      pts.forEach(p => { const pred = p.s < c && p.s < p.med * 0.7; if (pred && p.r.fora) tp++; else if (pred) fp++; else if (p.r.fora) fn++; });
-      const P = tp + fp ? tp / (tp + fp) : 1, R = tp + fn ? tp / (tp + fn) : 0, f = (P + R) ? (1.25 * P * R) / (0.25 * P + R) : 0;   // F0,5: prefere não anular respostas boas
-      tab.push('  corte ' + Math.round(c * 100) + '%: precisão ' + Math.round(P * 100) + '% · pega ' + Math.round(R * 100) + '% do que é fora · anulou ' + fp + ' boa(s)');
-      if (!melhor || f > melhor.f + 1e-9) melhor = { c, f, fp, tp, fn };
-    }
-    const ok = pts.filter(p => !p.r.fora).map(p => p.s), fo = pts.filter(p => p.r.fora).map(p => p.s);
-    const med = a => a.length ? Math.round(Motor.mediana(a) * 100) : 0;
-    txt += 'RELEVÂNCIA (' + pts.length + ' respostas)\n  mediana ok: ' + med(ok) + '% · mediana fora: ' + med(fo) + '%\n' + tab.join('\n') + '\n  → melhor corte: ' + Math.round(melhor.c * 100) + '%\n';
-    const erros = pts.filter(p => (p.s < melhor.c && p.s < p.med * 0.7) !== p.r.fora).map(p => '    ' + (p.r.fora ? 'NÃO PEGOU' : 'ANULOU BOA') + ': ' + p.r.resposta + ' (' + Math.round(p.s * 100) + '%) em "' + p.r.secao_id + '"');
-    if (erros.length) txt += '  erros no melhor corte:\n' + erros.join('\n') + '\n';
-    CAL.corte = melhor.c;
+    txt += '  → melhor método: ' + melhorGeral.modo + ' (corte ' + Math.round(melhorGeral.c * 100) + '%)\n';
+    const erros = melhorGeral.pts.filter(p => (p.s < melhorGeral.c) !== p.r.fora).map(p => '    ' + (p.r.fora ? 'NÃO PEGOU' : 'ANULOU BOA') + ': ' + p.r.resposta + ' (' + Math.round(p.s * 100) + '%) em "' + p.r.secao_id + '"');
+    if (erros.length) txt += '  erros no melhor método:\n' + erros.join('\n') + '\n';
+    CAL.corte = melhorGeral.c; CAL.modo = melhorGeral.modo;
   }
   // --- agrupamento ---
   const blocos = $('cal-grp').value.split(/\n\s*\n/).map(b => b.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a.length >= 2 && a[1]));
@@ -1358,7 +1374,7 @@ async function calibrar() {
     await Sem.garantir(rows);
     let melhor = null; const tab = [];
     for (let l = 0.45; l <= 0.901; l += 0.05) {
-      const res = Motor.processar(rows, l, { vec: t => Sem.vecs.get(t), ctx: () => null, corte: 0 });
+      const res = Motor.processar(rows, l, { vec: t => Sem.vecs.get(t), ctx: () => null, corte: null });
       const lab = new Map(res.map(r => [r.id, r.cluster]));
       let tp = 0, fp = 0, fn = 0;
       blocos.forEach((b, k) => { for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) {
@@ -1655,12 +1671,13 @@ function iniciarMed() {
   $('btn-cal-ex').addEventListener('click', () => { $('cal-rel').value = CAL_REL; $('cal-grp').value = CAL_GRP; });
   $('btn-cal').addEventListener('click', async () => { $('cal-out').textContent = 'Calculando…'; try { await calibrar(); } catch (e) { $('cal-out').textContent = 'Erro: ' + e.message; } });
   $('btn-cal-aplicar').addEventListener('click', async () => {
-    if (CAL.corte != null) { M.relevancia = CAL.corte; $('slider-rel').value = Math.round(CAL.corte * 100); $('val-rel').textContent = Math.round(CAL.corte * 100); }
+    if (CAL.corte != null) { M.relevancia = CAL.corte; M.relModo = CAL.modo; $('modo-rel').textContent = CAL.modo; $('slider-rel').value = Math.round(CAL.corte * 100); $('val-rel').textContent = Math.round(CAL.corte * 100); }
     if (CAL.limiar != null) { M.limiar = CAL.limiar; $('slider-sim').value = Math.round(CAL.limiar * 100); $('val-sim').textContent = Math.round(CAL.limiar * 100); }
     toast('Valores aplicados nesta sessão.'); await recarregarRows();
   });
   $('slider-rel').addEventListener('input', () => { $('val-rel').textContent = $('slider-rel').value; });
   $('slider-rel').addEventListener('change', async () => { M.relevancia = parseInt($('slider-rel').value, 10) / 100; await recarregarRows(); });
+  $('chk-rel').addEventListener('change', async () => { M.relOn = $('chk-rel').checked; await recarregarRows(); });
   $('chk-sem').checked = LS.get('bio_sem') !== '0';
   $('chk-sem').addEventListener('change', async () => { LS.set('bio_sem', $('chk-sem').checked ? '1' : '0'); if ($('chk-sem').checked) Sem.carregar(); Sem.status(); await recarregarRows(); });
   $('btn-sem-teste').addEventListener('click', async () => {
