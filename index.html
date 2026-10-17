@@ -23,6 +23,18 @@ button,input,select,textarea{font:inherit}
 .conn{margin-left:auto;font-size:12px;padding:3px 10px;border-radius:99px;background:#223a5e;white-space:nowrap}
 .conn.ok{background:#14543d}.conn.err{background:#7a2323}
 .wrap{max-width:560px;margin:0 auto;padding:16px}
+.timer.pre,.timer-gigante.pre{font-size:.5em;letter-spacing:0}
+.sala-box{background:#EAF0F8;border-radius:12px;padding:10px 12px;margin-bottom:12px;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.sala-box b{font-size:19px;color:var(--n8)}
+.sala-item{display:block;width:100%;text-align:left;background:#fff;border:2px solid #C9D6E8;border-radius:12px;padding:10px 12px;margin:8px 0;cursor:pointer;color:var(--ink);font:inherit}
+.sala-item:hover,.sala-item:focus{border-color:var(--or)}
+.sala-item b{display:block;font-size:17px;color:var(--n8)}
+.sala-item small{color:#55657d}
+.geral{max-width:980px;margin:0 auto;padding:16px}
+.geral .card{margin-bottom:14px}
+.geral table{background:#fff;color:var(--ink)}
+.geral th,.geral td{padding:8px 10px;border-bottom:1px solid #DDE6F2;text-align:left;vertical-align:middle}
+.geral td .btn{margin:2px 4px 2px 0}
 .card{background:#fff;color:var(--ink);border-radius:16px;padding:18px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
 .card h2{margin:.1em 0 .4em;font-size:21px}
 .centro{text-align:center}
@@ -172,7 +184,18 @@ body.apresentacao .controles{display:none}
 
   <div id="s-conectando" class="card centro" hidden><div class="pulso"></div><p>Conectando…</p></div>
 
+  <div id="s-salas" class="card" hidden>
+    <h2>Escolha sua dinâmica</h2>
+    <label for="in-busca">Buscar pelo título da sala ou pelo nome do monitor</label>
+    <input id="in-busca" type="text" autocomplete="off" placeholder="Ex.: IA na saúde ou Maria">
+    <p id="fb-salas" class="erro" role="alert"></p>
+    <div id="lista-salas"></div>
+    <p class="dica">Dica: escaneie o QR Code do telão para entrar direto na sala certa.</p>
+  </div>
+
   <div id="s-login" class="card" hidden>
+    <div class="sala-box"><span class="dica">Sala</span><b id="login-sala"></b><span class="dica" id="login-monitor"></span>
+      <button id="btn-outra-sala" class="btn btn-claro btn-mini" style="margin-top:6px">Trocar de sala</button></div>
     <h2>Entrar na dinâmica</h2>
     <label for="in-nick">Seu apelido (único na sala)</label>
     <input id="in-nick" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="Ex.: Ana_Biomed ou Grupo 4">
@@ -226,22 +249,72 @@ body.apresentacao .controles{display:none}
   <div id="s-resultado" class="card" hidden></div>
 </section>
 
+<!-- ===================== ADMIN GERAL ===================== -->
+<section id="view-geral" hidden>
+  <div id="ger-login" class="wrap"><div class="card">
+    <h2>Admin geral</h2>
+    <label for="ger-senha">Senha geral</label>
+    <input id="ger-senha" type="password" autocomplete="current-password">
+    <p id="ger-erro" class="erro" role="alert"></p>
+    <button id="btn-ger-entrar" class="btn btn-or btn-grande">Entrar</button>
+  </div></div>
+  <div id="ger-app" class="geral" hidden>
+    <div class="card">
+      <h2>Convite de cadastro</h2>
+      <p class="dica">Quem receber este link pode se cadastrar como monitor e ganha uma sala própria. Envie só ao grupo de monitores.</p>
+      <input id="ger-link" type="text" readonly>
+      <div class="linha" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-or btn-mini" id="btn-ger-copiar">Copiar link</button>
+        <button class="btn btn-mini" id="btn-ger-convite">Trocar código do convite</button>
+        <button class="btn btn-mini" id="btn-ger-senha">Trocar senha geral</button>
+        <button class="btn btn-mini" id="btn-ger-sair">Sair</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Monitores e salas <span class="dica" id="ger-total"></span></h2>
+      <div class="tabela-wrap"><table>
+        <thead><tr><th>Monitor</th><th>Sala (título)</th><th>Estado</th><th>Pessoas</th><th>Ações</th></tr></thead>
+        <tbody id="ger-tbody"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
 <!-- ===================== MEDIADOR / TELÃO ===================== -->
 <section id="view-med" hidden>
+  <div id="med-cadastro" class="wrap" hidden>
+    <div class="card">
+      <h2>Cadastro de monitor</h2>
+      <p class="dica">Você terá uma sala própria para a sua dinâmica. O apelido é único.</p>
+      <label for="cad-nick">Seu apelido de monitor</label>
+      <input id="cad-nick" type="text" maxlength="30" autocomplete="off" placeholder="Ex.: Maria PET">
+      <label for="cad-titulo">Título da sua sala (o que os participantes vão ver)</label>
+      <input id="cad-titulo" type="text" maxlength="60" autocomplete="off" placeholder="Ex.: Inteligência artificial na saúde">
+      <label for="cad-senha">Crie uma senha (mínimo 6 caracteres)</label>
+      <input id="cad-senha" type="password" autocomplete="new-password">
+      <p id="cad-erro" class="erro" role="alert"></p>
+      <button id="btn-cadastrar" class="btn btn-or btn-grande">Criar minha sala</button>
+      <p class="dica">Já tem cadastro? <a href="#mediador">Entrar</a></p>
+    </div>
+  </div>
+
   <div id="med-login" class="wrap">
     <div class="card">
-      <h2>Painel do mediador</h2>
+      <h2>Painel do monitor</h2>
+      <label for="med-nick">Apelido do monitor</label>
+      <input id="med-nick" type="text" maxlength="30" autocomplete="username">
       <label for="med-senha">Senha</label>
       <input id="med-senha" type="password" autocomplete="current-password">
       <p id="med-erro" class="erro" role="alert"></p>
       <button id="btn-med-entrar" class="btn btn-or btn-grande">Entrar</button>
-      <p class="dica">A senha fica no banco de dados, não no código do site.</p>
+      <p class="dica">Primeiro acesso? Use o link de cadastro que você recebeu.</p>
     </div>
   </div>
 
   <div id="med-app" class="med-grid" hidden>
     <aside class="controles" id="med-controles">
-      <div id="aviso-senha" class="aviso" hidden>⚠ Você está usando a senha padrão. <a href="#" id="lnk-trocar-senha" style="color:#5a3200">Trocar agora</a></div>
+      <div class="sala-box" style="background:rgba(255,255,255,.08)"><span class="dica" style="color:var(--n3)" id="med-quem"></span>
+        <label class="chk" style="margin:4px 0 0"><input type="checkbox" id="chk-publica" checked> Sala aparece na lista dos participantes</label>
+        <div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-mini" id="btn-voltar-geral" hidden>← Admin geral</button><button class="btn btn-mini" id="btn-sair-med">Sair</button></div></div>
       <h3>Roteiro da oficina</h3>
       <div class="plano" id="plano-box"></div>
       <div id="lista-secoes"></div>
@@ -267,9 +340,15 @@ body.apresentacao .controles{display:none}
 
       <h3>Apresentação</h3>
       <button class="btn" id="btn-apresentar">🖥 Modo apresentação (esconde este painel)</button>
-      <label class="chk">Sensibilidade do agrupamento: <b id="val-sim">75</b>%</label>
-      <input type="range" id="slider-sim" min="60" max="95" value="75" style="width:100%;accent-color:#F28C28">
+      <label class="chk">Sensibilidade do agrupamento: <b id="val-sim">62</b>%</label>
+      <input type="range" id="slider-sim" min="45" max="90" value="62" style="width:100%;accent-color:#F28C28">
       <p class="dica" style="color:var(--n3)">Mais baixo junta ideias parecidas; mais alto separa. Dá para unir ou separar à mão na aba Auditoria.</p>
+      <label class="chk">Rigor do filtro de assunto: <b id="val-rel">15</b>%</label>
+      <input type="range" id="slider-rel" min="0" max="40" value="15" style="width:100%;accent-color:#F28C28">
+      <label class="chk"><input type="checkbox" id="chk-sem" checked> Usar modelo semântico (só neste aparelho; baixa ~100 MB na 1ª vez)</label>
+      <p class="dica" id="sem-status" style="color:var(--n3)"></p>
+      <button class="btn btn-mini" id="btn-sem-teste" type="button">Testar modelo</button> <span class="dica" id="sem-teste" style="color:var(--n3)"></span>
+      <p class="dica" style="color:var(--n3)">Respostas sem sentido ou fora do assunto valem 0 automaticamente (aparecem na Auditoria; o botão "Aceitar" devolve os pontos). Rigor 0 desliga o filtro de assunto.</p>
 
       <button class="btn" id="btn-csv">📥 Baixar relatório (CSV)</button>
       <details>
@@ -527,19 +606,37 @@ const Motor = (function () {
     }
     return prev[n];
   }
-  // Para frases: compara palavras pelo radical (6 primeiras letras), tolerando flexões (automatizar/automacao)
+  // ---- Similaridade textual (sem modelo): radicais ponderados pela raridade da palavra na própria pergunta ----
   const rad = w => w.length > 6 ? w.slice(0, 6) : w;
-  function sim(ka, kb) {
+  const toks = k => k ? Array.from(new Set(k.split(' ').map(rad))) : [];
+  function simLex(ka, kb, idf) {
     if (ka === kb) return 1;
     if (!ka || !kb) return 0;
     const ratio = 1 - lev(ka, kb) / Math.max(ka.length, kb.length);
-    const A = new Set(ka.split(' ').map(rad)), B = new Set(kb.split(' ').map(rad));
-    let inter = 0; A.forEach(t => { if (B.has(t)) inter++; });
-    const uni = A.size + B.size - inter;
-    const tok = inter ? ((inter / Math.min(A.size, B.size)) + (inter / uni)) / 2 : 0;
-    // frases (3+ palavras): exige menos coincidência exata, pois a redação varia muito
-    const frase = Math.max(A.size, B.size) >= 3;
-    return Math.max(ratio, frase ? Math.min(1, tok * 1.15) : tok);
+    const A = toks(ka), B = toks(kb), SB = new Set(B);
+    const w = t => (idf && idf.get(t)) || 1;
+    let inter = 0, wa = 0, wb = 0;
+    A.forEach(t => { wa += w(t); if (SB.has(t)) inter += w(t); });
+    B.forEach(t => { wb += w(t); });
+    if (!inter) return ratio;
+    const jac = inter / (wa + wb - inter), cont = inter / Math.min(wa, wb);
+    return Math.max(ratio, 0.55 * jac + 0.45 * cont * Math.min(1, 0.55 + 0.25 * Math.min(A.length, B.length)));
+  }
+  // ---- Ruído evidente (sempre ligado, sem modelo): teclado batido, repetições, não-respostas ----
+  const NAORESP = /^(n(a|ã)o sei|sei l(a|á)|nada|nenhum[a]?|tanto faz|sem ideia|nao tenho|nem ideia|teste|test|oi|ola|olá|bla+|blabla\w*|ok|sim|n(a|ã)o)$/;
+  function lixo(txt) {
+    const t = String(txt == null ? '' : txt).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (!t) return false;
+    if (!/[a-z0-9]/.test(t)) return true;
+    if (NAORESP.test(t.replace(/[^a-z ]/g, '').trim())) return true;
+    const L = t.replace(/[^a-z]/g, '');
+    if (/(.)\1{3,}/.test(L)) return true;
+    if (/^(ha|he|hi|ja|ka|ks|rs)+$/.test(L) && L.length >= 4) return true;
+    if (L.length >= 5 && !/[aeiouy]/.test(L)) return true;
+    if (/asdf|qwer|zxcv|sdfg|dfgh|hjkl|jklç|lkjh|fghj/.test(L)) return true;
+    const palavras = L.length >= 6 && t.split(/\s+/).length === 1;
+    if (palavras && new Set(L).size <= 2) return true;
+    return false;
   }
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   function rotulo(itens) {
@@ -548,17 +645,41 @@ const Motor = (function () {
     let melhor = null; cont.forEach(o => { if (!melhor || o.n > melhor.n) melhor = o; });
     return cap(melhor.txt);
   }
-  // rows: linhas completas (com cluster_manual e invalida). Devolve cópias com cluster/freq/pontos recalculados.
-  function processar(rows, limiar) {
+  const vk = r => r.resposta.trim().toLowerCase();
+  function cos(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }   // vetores já normalizados
+  const semEscala = c => Math.max(0, Math.min(1, (c - 0.2) / 0.7));    // cosseno 0.2→0, 0.9→1
+  const mediana = v => { const x = v.slice().sort((p, q) => p - q), m = x.length >> 1; return x.length ? (x.length % 2 ? x[m] : (x[m - 1] + x[m]) / 2) : 0; };
+  // rows: linhas completas (com cluster_manual e invalida). `sem` (opcional) = { vec(txt), ctx(chave), corte }.
+  // Devolve cópias com cluster/freq/pontos recalculados. Linhas "fora" (ruído/fora do tema) valem 0 e não formam consenso.
+  function processar(rows, limiar, sem) {
     const grupos = new Map();
     rows.forEach(r => { const k = r.secao_id + '|' + r.pergunta_idx; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(r); });
     const out = [];
-    grupos.forEach(lista => {
+    grupos.forEach((lista, gk) => {
       const clusters = [];
       const validos = lista.filter(r => !r.invalida);
       const manuais = validos.filter(r => r.cluster_manual);
-      const autos = validos.filter(r => !r.cluster_manual).map(r => ({ r, k: chave(r.resposta) }))
+      let autos0 = validos.filter(r => !r.cluster_manual);
+      // 1) filtro automático de relevância
+      const fora = new Map();
+      autos0.forEach(r => { if (lixo(r.resposta)) fora.set(r.id, 'lixo'); });
+      const cv = sem && sem.ctx ? sem.ctx(gk) : null;
+      if (cv && sem.corte > 0) {
+        const rel = new Map(); autos0.forEach(r => { if (fora.has(r.id)) return; const v = sem.vec(vk(r)); if (v) rel.set(r.id, cos(v, cv)); });
+        const med = mediana(Array.from(rel.values()));
+        rel.forEach((c, id) => { if (c < sem.corte && c < med * 0.6) fora.set(id, 'tema'); });
+      }
+      const autos = autos0.filter(r => !fora.has(r.id)).map(r => ({ r, k: chave(r.resposta) }))
         .sort((x, y) => x.k < y.k ? -1 : x.k > y.k ? 1 : (x.r.id < y.r.id ? -1 : 1));
+      // 2) pesos de raridade (IDF) das palavras desta pergunta
+      const df = new Map(); const uni = new Map(); autos.forEach(({ r, k }) => { if (!uni.has(k)) uni.set(k, []); uni.get(k).push(r); });
+      uni.forEach((_, k) => toks(k).forEach(t => df.set(t, (df.get(t) || 0) + 1)));
+      const N = uni.size, idf = new Map(); df.forEach((d, t) => idf.set(t, 1 + Math.log((N + 1) / (d + 1))));
+      const simR = (ra, ka, rb, kb) => {
+        let s = simLex(ka, kb, idf);
+        if (sem && sem.vec) { const va = sem.vec(vk(ra)), vb = sem.vec(vk(rb)); if (va && vb) s = Math.max(s, semEscala(cos(va, vb))); }
+        return s;
+      };
       manuais.forEach(r => {
         if (r.cluster_manual.startsWith('__solo__')) { clusters.push({ gid: r.cluster_manual, sk: null, itens: [r], fixo: r.resposta.trim() ? cap(r.resposta.trim()) : '' }); return; }
         const gid = 'm:' + chave(r.cluster_manual);
@@ -566,16 +687,33 @@ const Motor = (function () {
         if (!c) { c = { gid, sk: chave(r.cluster_manual), itens: [], fixo: r.cluster_manual.trim() }; clusters.push(c); }
         c.itens.push(r);
       });
+      // 3) respostas que combinam com um grupo definido à mão entram nele
+      const livres = [];
       autos.forEach(({ r, k }) => {
         let melhor = null, ms = -1;
-        clusters.forEach(c => { if (c.sk == null) return; const s = sim(k, c.sk); if (s >= limiar && s > ms) { ms = s; melhor = c; } });
-        if (melhor) melhor.itens.push(r); else clusters.push({ gid: 'a:' + k + ':' + r.id, sk: k, itens: [r], fixo: null });
+        clusters.forEach(c => { if (c.sk == null) return; const s = simLex(k, c.sk, idf); if (s >= limiar && s > ms) { ms = s; melhor = c; } });
+        if (melhor) melhor.itens.push(r); else livres.push({ r, k });
       });
+      // 4) o resto: agrupamento hierárquico por média (independe da ordem e evita "efeito corrente")
+      let cs = []; const porK = new Map();
+      livres.forEach(({ r, k }) => { let c = porK.get(k); if (!c) { c = { itens: [], rep: r, k }; porK.set(k, c); cs.push(c); } c.itens.push(r); });
+      const n = cs.length, M = Array.from({ length: n }, () => new Float64Array(n));
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) M[i][j] = M[j][i] = simR(cs[i].rep, cs[i].k, cs[j].rep, cs[j].k);
+      let vivo = cs.map((_, i) => i), tam = cs.map(c => c.itens.length);
+      while (vivo.length > 1) {
+        let bi = -1, bj = -1, bs = limiar - 1e-9;
+        for (let x = 0; x < vivo.length; x++) for (let y = x + 1; y < vivo.length; y++) { const s = M[vivo[x]][vivo[y]]; if (s > bs) { bs = s; bi = vivo[x]; bj = vivo[y]; } }
+        if (bi < 0) break;
+        for (const m of vivo) { if (m === bi || m === bj) continue; const v = (M[bi][m] * tam[bi] + M[bj][m] * tam[bj]) / (tam[bi] + tam[bj]); M[bi][m] = M[m][bi] = v; }
+        cs[bi].itens = cs[bi].itens.concat(cs[bj].itens); tam[bi] += tam[bj]; vivo = vivo.filter(m => m !== bj);
+      }
+      vivo.forEach(i => clusters.push({ gid: 'a:' + cs[i].k + ':' + cs[i].rep.id, sk: cs[i].k, itens: cs[i].itens, fixo: null }));
       clusters.forEach(c => {
         const label = c.fixo || rotulo(c.itens), freq = c.itens.length, pontos = freq === 1 ? 10 : 5;
         c.itens.forEach(r => out.push(Object.assign({}, r, { cluster: label, freq, pontos })));
       });
       lista.filter(r => r.invalida).forEach(r => out.push(Object.assign({}, r, { cluster: null, freq: 0, pontos: 0 })));
+      autos0.filter(r => fora.has(r.id)).forEach(r => out.push(Object.assign({}, r, { cluster: null, freq: 0, pontos: 0, fora: fora.get(r.id) })));
     });
     return out;
   }
@@ -608,13 +746,13 @@ const Motor = (function () {
     const cab = ['Secao', 'Pergunta', 'Participante', 'Profissao', 'Resposta_original', 'Grupo', 'Frequencia', 'Pontos', 'Classificacao', 'Anulada', 'Ajuste_manual'];
     const linhas = [cab.map(csvCelula).join(';')];
     proc.filter(r => r.pontos != null).forEach(r => {
-      const cls = r.invalida ? 'Anulada' : r.pontos === 10 ? 'Ideia unica' : 'Consenso';
+      const cls = r.invalida ? 'Anulada' : r.fora ? 'Fora do assunto (auto)' : r.pontos === 10 ? 'Ideia unica' : 'Consenso';
       const aj = r.cluster_manual ? (r.cluster_manual.startsWith('__solo__') ? 'separada' : 'unida') : '';
       linhas.push([r.secao_titulo, r.pergunta, r.nickname, r.profissao, r.resposta, r.cluster || '', r.freq, r.pontos, cls, r.invalida ? 'sim' : 'nao', aj].map(csvCelula).join(';'));
     });
     return '﻿' + linhas.join('\r\n');
   }
-  return { chave, sim, processar, ranking, clustersDe, gerarCSV };
+  return { chave, sim: simLex, lixo, processar, ranking, clustersDe, gerarCSV };
 })();
 window.Motor = Motor;
 </script>
@@ -655,17 +793,30 @@ async function rpc(fn, args) {
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let MODO = 'part';
+function lerHash() {
+  const h = location.hash || '', q = location.search || '';
+  if (/^#admin/i.test(h)) return { modo: 'geral' };
+  const c = h.match(/^#cadastro=(.+)$/i); if (c) return { modo: 'med', convite: decodeURIComponent(c[1]) };
+  if (/^#mediador/i.test(h) || /[?&]mediador/.test(q)) return { modo: 'med' };
+  const m = h.match(/^#sala=([A-Za-z0-9_-]+)/) || q.match(/[?&]sala=([A-Za-z0-9_-]+)/);
+  return { modo: 'part', sala: m ? m[1] : null };
+}
 function definirModo() {
-  MODO = (location.hash === '#mediador' || /[?&]mediador/.test(location.search)) ? 'med' : 'part';
-  $('view-part').hidden = MODO !== 'part'; $('view-med').hidden = MODO !== 'med';
-  $('rodape').hidden = MODO === 'med';
+  const h = lerHash(); MODO = h.modo;
+  $('view-part').hidden = MODO !== 'part'; $('view-med').hidden = MODO !== 'med'; $('view-geral').hidden = MODO !== 'geral';
+  $('rodape').hidden = MODO !== 'part';
+  if (MODO === 'part' && h.sala !== P.sala) trocarSalaPart(h.sala);
+  if (MODO === 'med') {
+    M.convite = h.convite || null;
+    if (!M.app) { $('med-cadastro').hidden = !M.convite; $('med-login').hidden = !!M.convite; }
+  }
 }
 
 /* ===================== PARTICIPANTE ===================== */
-const P = { ident: null, estado: null, offset: 0, res: null, versaoRes: -1, jogoChave: null, enviando: false, buscandoRes: false, token: null };
-function lerIdent() { try { const o = JSON.parse(LS.get('bio_ident') || 'null'); return o && o.nick && o.token ? o : null; } catch (e) { return null; } }
+const P = { sala: null, salas: [], ident: null, estado: null, offset: 0, res: null, versaoRes: -1, jogoChave: null, enviando: false, buscandoRes: false, token: null };
+function lerIdent() { try { const o = JSON.parse(LS.get('bio_ident_' + P.sala) || 'null'); return o && o.nick && o.token ? o : null; } catch (e) { return null; } }
 function novoToken() { try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) { } return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12); }
-const TELAS = ['s-conectando', 's-login', 's-lobby', 's-jogo', 's-enviado', 's-resultado'];
+const TELAS = ['s-conectando', 's-salas', 's-login', 's-lobby', 's-jogo', 's-enviado', 's-resultado'];
 function mostrar(id) { TELAS.forEach(t => { $(t).hidden = t !== id; }); }
 const agoraSrv = () => Date.now() + P.offset;
 const secaoDe = e => (e && e.agenda || []).find(s => s.id === e.secao_id) || null;
@@ -678,25 +829,29 @@ async function entrar() {
   if (!P.token) P.token = novoToken();
   btn.disabled = true;
   try {
-    const r = await rpc('bio_entrar', { p_nick: nick, p_prof: prof, p_token: P.token });
+    const r = await rpc('bio_entrar', { p_sala: P.sala, p_nick: nick, p_prof: prof, p_token: P.token });
     if (r.ok) {
       P.ident = { nick: r.nickname, prof: prof || 'Geral', token: P.token };
-      LS.set('bio_ident', JSON.stringify(P.ident));
+      LS.set('bio_ident_' + P.sala, JSON.stringify(P.ident));
       await tickPart();
     } else {
-      fb.textContent = { em_uso: 'Esse apelido já está em uso (maiúsculas e acentos contam como iguais). Escolha outro.', tamanho: 'Use de 2 a 30 caracteres.', sala_cheia: 'A sala está cheia.', token: 'Erro de identificação. Recarregue a página.' }[r.erro] || 'Não foi possível entrar.';
+      fb.textContent = { em_uso: 'Esse apelido já está em uso (maiúsculas e acentos contam como iguais). Escolha outro.', tamanho: 'Use de 2 a 30 caracteres.', sala_cheia: 'A sala está cheia.', sala_inexistente: 'Sala não encontrada.', token: 'Erro de identificação. Recarregue a página.' }[r.erro] || 'Não foi possível entrar.';
     }
   } catch (e) { fb.textContent = 'Sem conexão com o servidor. Tente de novo.'; }
   btn.disabled = false;
 }
 function sairParticipante(msg) {
-  LS.del('bio_ident'); P.ident = null; P.token = null; P.res = null; P.versaoRes = -1;
+  LS.del('bio_ident_' + P.sala); P.ident = null; P.token = null; P.res = null; P.versaoRes = -1;
   const a = $('aviso-part'); if (msg) { a.textContent = msg; a.hidden = false; } else a.hidden = true;
   renderPart();
 }
 async function tickPart() {
   try {
-    const e = await rpc('bio_estado', { p_nick: P.ident ? P.ident.nick : null, p_token: P.ident ? P.ident.token : null });
+    if (!P.sala) {
+      P.salas = await rpc('bio_salas_publicas', {}); setConn(true); renderSalas(); return;
+    }
+    const e = await rpc('bio_estado', { p_sala: P.sala, p_nick: P.ident ? P.ident.nick : null, p_token: P.ident ? P.ident.token : null });
+    if (e.erro) { const s = P.sala; location.hash = ''; P.estado = null; trocarSalaPart(null); $('fb-salas').textContent = 'Sala "' + s + '" não encontrada. Escolha uma da lista.'; return; }
     P.offset = e.agora_ms - Date.now(); P.estado = e; setConn(true);
     if (P.ident && e.eu_ok === false) { sairParticipante('A sala foi reiniciada. Entre de novo com seu apelido.'); return; }
     if (P.ident && (e.status === 'RESULTADOS' || e.status === 'FIM') && P.versaoRes !== e.versao && !P.buscandoRes) buscarMeuResultado(e.versao);
@@ -707,16 +862,21 @@ async function buscarMeuResultado(versao) {
   P.buscandoRes = true;
   try {
     await sleep(Math.random() * 1200);        // espalha as consultas dos celulares
-    const r = await rpc('bio_meu_resultado', { p_nick: P.ident.nick, p_token: P.ident.token });
+    const r = await rpc('bio_meu_resultado', { p_sala: P.sala, p_nick: P.ident.nick, p_token: P.ident.token });
     if (r.ok) { P.res = r; P.versaoRes = versao; } else if (r.erro === 'identidade') sairParticipante('Entre de novo com seu apelido.');
   } catch (e) { }
   P.buscandoRes = false; renderPart();
 }
 function renderPart() {
   if (MODO !== 'part') return;
-  if (!P.ident) { mostrar('s-login'); return; }
-  const e = P.estado; if (!e) { mostrar('s-conectando'); return; }
-  $('topo-titulo').textContent = (e.titulo && e.titulo !== 'BioInova STOP!') ? e.titulo : '';
+  if (!P.sala) { mostrar('s-salas'); return; }
+  const e = P.estado; if (!P.ident) {
+    if (!e) { mostrar('s-conectando'); return; }
+    $('login-sala').textContent = e.sala_nome || ''; $('login-monitor').textContent = 'Monitor: ' + (e.monitor || '');
+    $('topo-titulo').textContent = e.sala_nome || ''; mostrar('s-login'); return;
+  }
+  if (!e) { mostrar('s-conectando'); return; }
+  $('topo-titulo').textContent = e.sala_nome || '';
   if (e.status === 'LOBBY') {
     $('lobby-nome').textContent = 'Olá, ' + P.ident.nick + '!'; $('lobby-prof').textContent = 'Você representa: ' + P.ident.prof;
     $('lobby-n').textContent = e.n_participantes; mostrar('s-lobby');
@@ -724,7 +884,7 @@ function renderPart() {
     const sec = secaoDe(e); if (!sec) { mostrar('s-lobby'); return; }
     const chave = chaveRodada(e), st = LS.get('bio_env_' + chave);
     if (st) { renderEnviado(e, st); mostrar('s-enviado'); }
-    else { montarJogo(sec, chave); renderJogoMeta(e, sec); mostrar('s-jogo'); }
+    else { montarJogo(sec, chave); renderJogoMeta(e, sec); mostrar('s-jogo'); relogioPart(); }
   } else { renderResultado(e); mostrar('s-resultado'); }
 }
 function montarJogo(sec, chave) {
@@ -770,7 +930,7 @@ async function enviar(auto) {
   if (!n) { if (auto) { LS.set('bio_env_' + chave, 'vazio'); renderPart(); } else $('fb-envio').textContent = 'Preencha pelo menos um campo.'; return; }
   P.enviando = true; $('btn-enviar').disabled = true; $('fb-envio').textContent = '';
   try {
-    const r = await rpc('bio_enviar', { p_nick: P.ident.nick, p_token: P.ident.token, p_itens: itens });
+    const r = await rpc('bio_enviar', { p_sala: P.sala, p_nick: P.ident.nick, p_token: P.ident.token, p_itens: itens });
     if (r.ok) LS.set('bio_env_' + chave, 'ok');
     else if (r.erro === 'tempo' || r.erro === 'fechada') LS.set('bio_env_' + chave, 'tempo');
     else if (r.erro === 'identidade') { sairParticipante('Entre de novo com seu apelido.'); P.enviando = false; return; }
@@ -798,7 +958,7 @@ function renderResultado(e) {
       if (!r) h += '<div>—</div>';
       else {
         ptsSec += r.pontos || 0;
-        const tag = r.invalida ? '<span class="tag zero">Anulada · 0 pts</span>' : r.pontos === 10 ? '<span class="tag unica">Ideia única · +10</span>' : '<span class="tag consenso">Consenso com ' + (r.freq - 1) + ' pessoa(s) · +5</span>';
+        const tag = r.fora ? '<span class="tag zero">Fora do assunto · 0 pts</span>' : r.invalida ? '<span class="tag zero">Anulada · 0 pts</span>' : r.pontos === 10 ? '<span class="tag unica">Ideia única · +10</span>' : '<span class="tag consenso">Consenso com ' + (r.freq - 1) + ' pessoa(s) · +5</span>';
         h += '<div><b>' + esc(r.resposta) + '</b></div>' + tag;
       }
       h += '</div>';
@@ -815,8 +975,30 @@ function renderResultado(e) {
   if (fim) h += '<p class="centro dica" style="margin-top:14px">Obrigado por participar! 🧬</p>';
   card.innerHTML = h;
 }
+function trocarSalaPart(sala) {
+  P.sala = sala; P.estado = null; P.res = null; P.versaoRes = -1; P.jogoChave = null; P.token = null;
+  P.ident = sala ? lerIdent() : null; if (P.ident) P.token = P.ident.token;
+  $('aviso-part').hidden = true; $('topo-titulo').textContent = ''; $('fb-salas').textContent = '';
+  renderPart(); if (iniciado) tickPart();
+}
+function renderSalas() {
+  if (MODO !== 'part' || P.sala) return;
+  const q = BIO_norm($('in-busca').value), box = $('lista-salas'), sig = q + '|' + JSON.stringify(P.salas);
+  if (P.sigSalas === sig) return; P.sigSalas = sig; box.textContent = '';
+  const lista = P.salas.filter(s => !q || BIO_norm(s.nome + ' ' + s.monitor).includes(q));
+  if (!lista.length) { const p = document.createElement('p'); p.className = 'dica'; p.textContent = P.salas.length ? 'Nenhuma sala encontrada para essa busca.' : 'Nenhuma sala aberta no momento. Peça o QR Code ao monitor.'; box.appendChild(p); }
+  lista.forEach(s => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sala-item';
+    const t = document.createElement('b'); t.textContent = s.nome; const m = document.createElement('small'); m.textContent = 'Monitor: ' + s.monitor + ' · ' + s.n + (s.n === 1 ? ' pessoa' : ' pessoas');
+    b.appendChild(t); b.appendChild(m); b.addEventListener('click', () => { location.hash = '#sala=' + s.id; }); box.appendChild(b);
+  });
+  mostrar('s-salas');
+}
+const BIO_norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 function iniciarPart() {
-  P.ident = lerIdent();
+  P.sala = lerHash().sala || null; P.ident = lerIdent(); if (P.ident) P.token = P.ident.token;
+  $('in-busca').addEventListener('input', renderSalas);
+  $('btn-outra-sala').addEventListener('click', () => { location.hash = '#'; });
   $('btn-entrar').addEventListener('click', entrar);
   $('in-nick').addEventListener('keydown', ev => { if (ev.key === 'Enter') $('in-prof').focus(); });
   $('in-prof').addEventListener('keydown', ev => { if (ev.key === 'Enter') entrar(); });
@@ -824,12 +1006,17 @@ function iniciarPart() {
   $('btn-trocar').addEventListener('click', () => sairParticipante(''));
   renderPart();
   (function laco() { tickPart().finally(() => setTimeout(laco, POLL_MS + Math.random() * 600)); })();
-  setInterval(() => {
-    const e = P.estado; if (!e || e.status !== 'ABERTA' || !P.ident) return;
-    const resta = e.fim_em_ms - agoraSrv(), txt = fmtTempo(resta);
-    ['t-jogo', 't-env'].forEach(id => { const t = $(id); t.textContent = txt; t.classList.toggle('baixo', resta < 15000); });
-    if (resta <= 0 && !LS.get('bio_env_' + chaveRodada(e)) && secaoDe(e)) enviar(true);
-  }, 250);
+  setInterval(relogioPart, 250);
+}
+function relogioPart() {
+  const e = P.estado; if (!e || e.status !== 'ABERTA' || !P.ident) return;
+  const resta = e.fim_em_ms - agoraSrv(), antes = (e.inicio_em_ms || 0) - agoraSrv();
+  const txt = antes > 0 ? 'Prepare-se… ' + Math.ceil(antes / 1000) : fmtTempo(resta);
+  ['t-jogo', 't-env'].forEach(id => { const t = $(id); t.textContent = txt; t.classList.toggle('baixo', antes <= 0 && resta < 15000); t.classList.toggle('pre', antes > 0); });
+  document.querySelectorAll('#jogo-campos input').forEach(i => { i.disabled = antes > 0; });
+  $('btn-enviar').disabled = antes > 0 || P.enviando;
+  if (antes > 0) return;
+  if (resta <= 0 && !LS.get('bio_env_' + chaveRodada(e)) && secaoDe(e)) enviar(true);
 }
 
 /* ===================== MEDIADOR ===================== */
@@ -858,35 +1045,67 @@ function htmlPlano(p) {
   return '<b>⏱ ≈ ' + Math.round(p.usado) + ' min de ' + p.total + ' min</b> ' + (p.folga >= 0 ? '(sobram ' + Math.round(p.folga) + ' min)' : '<span style="color:#ff8f86">(estoura em ' + Math.round(-p.folga) + ' min!)</span>') + '<div class="barra"><i style="width:' + pct + '%"></i></div><small style="color:var(--n3)">Inclui 3 min de entrada, tempo de cada rodada, debate e 2 min de encerramento.</small>';
 }
 
-const M = { senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.75, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
+const M = { app: false, nick: null, sala: null, geral: false, convite: null, publicaInit: false, senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.62, relevancia: 0.15, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
 
-async function medEntrar(pwd, silencioso) {
+async function medEntrar(nick, pwd, silencioso) {
   const er = $('med-erro'); er.textContent = '';
   try {
-    const r = await rpc('bio_admin_login', { p_senha: pwd });
-    if (!r.ok) { if (!silencioso) er.textContent = 'Senha incorreta.'; SS.del('bio_med'); return false; }
-    M.senha = pwd; SS.set('bio_med', pwd);
-    $('med-login').hidden = true; $('med-app').hidden = false;
-    $('aviso-senha').hidden = !r.padrao;
-    iniciarLacoMed();
+    const r = await rpc('bio_monitor_login', { p_nick: nick, p_senha: pwd });
+    if (!r.ok) { if (!silencioso) er.textContent = 'Apelido ou senha incorretos.'; SS.del('bio_med'); return false; }
+    abrirPainel({ nick: r.nickname, senha: pwd, sala: r.sala, geral: false });
     return true;
   } catch (e) { if (!silencioso) er.textContent = 'Sem conexão com o servidor.'; return false; }
 }
+function abrirPainel(c) {
+  M.nick = c.nick; M.senha = c.senha; M.sala = c.sala; M.geral = !!c.geral; M.app = true;
+  SS.set('bio_med', JSON.stringify(c));
+  $('med-login').hidden = true; $('med-cadastro').hidden = true; $('med-app').hidden = false;
+  $('med-quem').textContent = c.geral ? 'Admin geral · sala ' + c.sala : 'Monitor: ' + c.nick;
+  $('btn-voltar-geral').hidden = !c.geral; $('btn-senha').hidden = !!c.geral;
+  iniciarLacoMed();
+}
+async function retomarPainel() {
+  let c = null; try { c = JSON.parse(SS.get('bio_med') || 'null'); } catch (e) { }
+  if (!c || !c.sala || !c.senha) return;
+  try { const r = await rpc('bio_admin_login', { p_sala: c.sala, p_senha: c.senha }); if (r.ok) abrirPainel(c); else SS.del('bio_med'); } catch (e) { }
+}
+function abrirPainelSessao() { SS.set('bio_med', JSON.stringify({ nick: M.nick, senha: M.senha, sala: M.sala, geral: M.geral })); }
+function sairPainel() {
+  const g = M.geral; SS.del('bio_med');
+  location.hash = g ? '#admin' : '#mediador'; location.reload();
+}
+async function cadastrarMonitor() {
+  const er = $('cad-erro'); er.textContent = '';
+  const nick = $('cad-nick').value.trim(), tit = $('cad-titulo').value.trim(), senha = $('cad-senha').value;
+  if (nick.length < 2) { er.textContent = 'Use pelo menos 2 caracteres no apelido.'; return; }
+  if (tit.length < 2) { er.textContent = 'Dê um título à sua sala.'; return; }
+  if (senha.length < 6) { er.textContent = 'A senha precisa de pelo menos 6 caracteres.'; return; }
+  $('btn-cadastrar').disabled = true;
+  try {
+    const r = await rpc('bio_monitor_cadastrar', { p_convite: M.convite, p_nick: nick, p_senha: senha, p_titulo: tit });
+    if (r.ok) { abrirPainel({ nick: r.nickname, senha, sala: r.sala, geral: false }); history.replaceState(null, '', location.pathname + '#mediador'); }
+    else er.textContent = { convite: 'Link de cadastro inválido ou vencido. Peça um novo ao administrador.', em_uso: 'Esse apelido de monitor já existe. Escolha outro.', tamanho: 'Use de 2 a 30 caracteres no apelido.', senha_curta: 'A senha precisa de pelo menos 6 caracteres.', limite: 'Limite de monitores atingido.' }[r.erro] || 'Não foi possível cadastrar.';
+  } catch (e) { er.textContent = 'Sem conexão com o servidor.'; }
+  $('btn-cadastrar').disabled = false;
+}
 async function adm(fn, args) {
-  try { return await rpc(fn, Object.assign({ p_senha: M.senha }, args || {})); }
+  try { return await rpc(fn, Object.assign({ p_sala: M.sala, p_senha: M.senha }, args || {})); }
   catch (e) {
-    const m = { rodada_aberta: 'Encerre a rodada antes de editar o roteiro.', senha_invalida: 'Senha inválida.', agenda_invalida: 'Roteiro inválido: confira títulos, perguntas e tempos.', senha_curta: 'A senha precisa de pelo menos 6 caracteres.', secao_inexistente: 'Seção não encontrada.' }[e.message];
+    const m = { rodada_aberta: 'Encerre a rodada antes de editar o roteiro.', senha_invalida: 'Senha inválida.', agenda_invalida: 'Roteiro inválido: confira títulos, perguntas e tempos.', senha_curta: 'A senha precisa de pelo menos 6 caracteres.', nome_curto: 'O título precisa de pelo menos 2 caracteres.', secao_inexistente: 'Seção não encontrada.' }[e.message];
     toast(m || ('Erro: ' + e.message)); throw e;
   }
 }
 function iniciarLacoMed() {
+  if (Sem.ligado()) Sem.carregar(); Sem.status();
   if (M.loop) return; M.loop = true;
   (async function laco() { try { await tickMed(); } catch (e) { } setTimeout(laco, MED_POLL_MS); })();
   setInterval(tickTimersMed, 250);
 }
 async function tickMed() {
   let e;
-  try { e = await rpc('bio_estado', {}); setConn(true); } catch (err) { setConn(false); return; }
+  try { e = await rpc('bio_estado', { p_sala: M.sala }); setConn(true); } catch (err) { setConn(false); return; }
+  if (e.erro) { toast('Sala não encontrada.'); sairPainel(); return; }
+  if (!M.publicaInit) { M.publicaInit = true; $('chk-publica').checked = !!e.publica; }
   M.offset = e.agora_ms - Date.now(); M.estado = e;
   if (e.status !== M.ultStatus) { M.palco = null; M.ultStatus = e.status; M.sigs = {}; }
   if (!e.agenda.length && !M.seeded && e.status !== 'ABERTA') {
@@ -909,12 +1128,57 @@ async function recarregarRows(render) {
     if (render !== false) renderMed();
   } catch (e) { }
 }
+/* ---- Modelo semântico (opcional, só no navegador do mediador; os participantes nunca baixam nada) ---- */
+const SEM_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
+const SEM_MODELO = 'Xenova/paraphrase-multilingual-MiniLM-L12-v2';
+const Sem = {
+  estado: 'off', vecs: new Map(), ctx: new Map(), embed: null, erro: '',
+  ligado() { return $('chk-sem') ? $('chk-sem').checked : true; },
+  vec(t) { return this.estado === 'pronto' && this.ligado() ? this.vecs.get(t) : undefined; },
+  ctxDe(k) { return this.estado === 'pronto' && this.ligado() ? this.ctx.get(k) : undefined; },
+  async carregar() {
+    if (this.estado === 'carregando' || this.estado === 'pronto') return;
+    this.estado = 'carregando'; this.status();
+    try {
+      const mod = await import(SEM_URL);
+      mod.env.allowLocalModels = false;
+      const ext = await mod.pipeline('feature-extraction', SEM_MODELO, { dtype: 'q8' });
+      this.embed = async txts => { const o = await ext(txts, { pooling: 'mean', normalize: true }); return o.tolist().map(v => Float32Array.from(v)); };
+      this.estado = 'pronto';
+    } catch (e) { this.estado = 'erro'; this.erro = String((e && e.message) || e).slice(0, 80); }
+    this.status();
+    if (this.estado === 'pronto') recarregarRows();
+  },
+  status() {
+    const el = $('sem-status'); if (!el) return;
+    el.textContent = !this.ligado() ? 'Modelo desligado: usando só comparação de texto.'
+      : this.estado === 'pronto' ? '✓ Modelo semântico pronto (agrupa por significado e filtra fora do assunto).'
+      : this.estado === 'carregando' ? '⏳ Carregando modelo… (se demorar, a rodada segue com comparação de texto)'
+      : this.estado === 'erro' ? '⚠ Modelo indisponível (' + this.erro + '). Usando comparação de texto.' : '';
+  },
+  // calcula vetores que faltam (respostas e "contexto" = título da seção + pergunta)
+  async garantir(rows) {
+    if (this.estado !== 'pronto' || !this.ligado() || !this.embed) return false;
+    const falta = new Set(), ctxs = new Map();
+    rows.forEach(r => {
+      const t = r.resposta.trim().toLowerCase(); if (t && !this.vecs.has(t)) falta.add(t);
+      const k = r.secao_id + '|' + r.pergunta_idx; if (!this.ctx.has(k)) ctxs.set(k, (r.secao_titulo || '') + '. ' + (r.pergunta || ''));
+    });
+    const L = Array.from(falta), C = Array.from(ctxs.entries());
+    if (!L.length && !C.length) return false;
+    for (let i = 0; i < L.length; i += 32) { const lote = L.slice(i, i + 32), v = await this.embed(lote); lote.forEach((t, j) => this.vecs.set(t, v[j])); }
+    if (C.length) { const v = await this.embed(C.map(c => c[1])); C.forEach((c, j) => this.ctx.set(c[0], v[j])); }
+    return true;
+  },
+  vista() { return { vec: t => this.vec(t), ctx: k => this.ctxDe(k), corte: M.relevancia }; }
+};
 async function processarEGravar() {
   if (M.processando) return; M.processando = true;
   try {
     const e = M.estado, aberta = e && e.status === 'ABERTA' ? e.secao_id : null;
     const base = M.rows.filter(r => r.secao_id !== aberta);
-    const calc = Motor.processar(base, M.limiar);
+    try { await Sem.garantir(base); } catch (e) { Sem.estado = 'erro'; Sem.erro = 'falha ao calcular'; Sem.status(); }
+    const calc = Motor.processar(base, M.limiar, Sem.vista());
     const orig = new Map(base.map(r => [r.id, r]));
     const diff = calc.filter(c => { const o = orig.get(c.id); return o.pontos !== c.pontos || o.freq !== c.freq || (o.cluster || null) !== (c.cluster || null); })
       .map(c => ({ id: c.id, cluster: c.cluster, freq: c.freq, pontos: c.pontos }));
@@ -971,7 +1235,7 @@ function renderPalco(e) {
   $('palco-titulo').textContent = palco === 'lobby' ? 'Entrada' : palco === 'aberta' ? 'Rodada em andamento' : palco === 'fim' ? 'Encerramento' : 'Resultados';
   if (palco === 'lobby') renderLobby(e); else if (palco === 'aberta') renderAberta(e); else if (palco === 'res') renderRes(e); else renderFim(e);
 }
-function urlApp() { return location.origin + location.pathname.replace(/index\.html$/i, ''); }
+function urlApp() { return location.origin + location.pathname.replace(/index\.html$/i, '') + '#sala=' + M.sala; }
 function renderLobby(e) {
   $('lobby-total').textContent = e.n_participantes;
   const sig = urlApp(); if (M.sigs.qr !== sig) {
@@ -995,14 +1259,14 @@ function renderAberta(e) {
 }
 function tickTimersMed() {
   const e = M.estado; if (!e || e.status !== 'ABERTA') return;
-  const resta = e.fim_em_ms - (Date.now() + M.offset), t = $('ab-timer');
-  t.textContent = fmtTempo(resta); t.classList.toggle('baixo', resta < 15000);
+  const resta = e.fim_em_ms - (Date.now() + M.offset), antes = (e.inicio_em_ms || 0) - (Date.now() + M.offset), t = $('ab-timer');
+  t.textContent = antes > 0 ? 'Prepare-se… ' + Math.ceil(antes / 1000) : fmtTempo(resta); t.classList.toggle('baixo', antes <= 0 && resta < 15000); t.classList.toggle('pre', antes > 0);
 }
 function renderRes(e) {
   const secs = secoesConhecidas().filter(s => M.proc.some(r => r.secao_id === s.id));
   if (e.status === 'RESULTADOS' && secs.some(s => s.id === e.secao_id) && M.ultSecaoAuto !== e.secao_id + ':' + e.rodada) { M.ultSecaoAuto = e.secao_id + ':' + e.rodada; M.secaoVer = e.secao_id; M.pergIdx = 0; M.sigs.res = null; }
   if (!secs.some(s => s.id === M.secaoVer)) { M.secaoVer = secs.length ? secs[secs.length - 1].id : null; M.pergIdx = 0; }
-  const sig = JSON.stringify([M.secaoVer, M.pergIdx, M.tab, M.filtro, M.proc.length, M.proc.map(r => r.pontos + ':' + r.cluster + ':' + r.invalida).join(',')]);
+  const sig = JSON.stringify([M.secaoVer, M.pergIdx, M.tab, M.filtro, M.proc.length, M.proc.map(r => r.pontos + ':' + r.cluster + ':' + r.invalida + ':' + r.fora).join(',')]);
   if (M.sigs.res === sig) return; M.sigs.res = sig;
   const sel = $('sel-secao'); sel.textContent = '';
   secs.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.titulo; sel.appendChild(o); }); sel.value = M.secaoVer || '';
@@ -1048,9 +1312,10 @@ function renderAudit() {
     .sort((a, b) => (a.cluster || '￿').localeCompare(b.cluster || '￿', 'pt-BR') || a.nickname.localeCompare(b.nickname, 'pt-BR'));
   const labels = Array.from(new Set(linhas.filter(r => !r.invalida && r.cluster).map(r => r.cluster)));
   linhas.forEach(r => {
-    const tr = document.createElement('tr'); if (r.invalida) tr.className = 'anulada';
+    const tr = document.createElement('tr'); if (r.invalida || r.fora) tr.className = 'anulada';
+    if (r.fora) { /* marcada automaticamente */ }
     const td = (t) => { const c = document.createElement('td'); c.textContent = t; return c; };
-    tr.appendChild(td(r.nickname)); tr.appendChild(td(r.resposta));
+    tr.appendChild(td(r.nickname)); tr.appendChild(td(r.resposta + (r.fora ? (r.fora === 'lixo' ? '  ⚠ sem sentido (auto)' : '  ⚠ fora do assunto (auto)') : '')));
     const tg = document.createElement('td'); const sl = document.createElement('select'); sl.setAttribute('aria-label', 'Grupo de ' + r.nickname);
     const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sl.appendChild(o); };
     add('', '(automático) ' + (r.cluster || '')); labels.forEach(l => add('m:' + l, l)); add('__solo__', '(separar como ideia própria)');
@@ -1058,7 +1323,7 @@ function renderAudit() {
     if (sl.value !== (r.cluster_manual ? (r.cluster_manual.startsWith('__solo__') ? '__solo__' : 'm:' + r.cluster_manual) : '')) sl.value = '';
     sl.disabled = !!r.invalida; sl.addEventListener('change', () => ajustarGrupo(r.id, sl.value));
     tg.appendChild(sl); tr.appendChild(tg); tr.appendChild(td(r.freq)); tr.appendChild(td(r.pontos));
-    const ta = document.createElement('td'); const bt = document.createElement('button'); bt.className = 'btn btn-mini'; bt.textContent = r.invalida ? 'Restaurar' : 'Anular'; bt.addEventListener('click', () => alternarAnulada(r.id)); ta.appendChild(bt); tr.appendChild(ta);
+    const ta = document.createElement('td'); const bt = document.createElement('button'); bt.className = 'btn btn-mini'; bt.textContent = r.invalida ? 'Restaurar' : r.fora ? 'Aceitar' : 'Anular'; bt.addEventListener('click', () => r.fora ? ajustarGrupo(r.id, '__solo__') : alternarAnulada(r.id)); ta.appendChild(bt); tr.appendChild(ta);
     tb.appendChild(tr);
   });
 }
@@ -1173,8 +1438,10 @@ async function salvarEditor() {
 
 function iniciarMed() {
   M.total = parseInt(LS.get('bio_total') || '25', 10) || 25; $('in-total').value = M.total;
-  $('btn-med-entrar').addEventListener('click', () => medEntrar($('med-senha').value));
-  $('med-senha').addEventListener('keydown', ev => { if (ev.key === 'Enter') medEntrar($('med-senha').value); });
+  const logar = () => medEntrar($('med-nick').value.trim(), $('med-senha').value);
+  $('btn-med-entrar').addEventListener('click', logar);
+  $('med-senha').addEventListener('keydown', ev => { if (ev.key === 'Enter') logar(); });
+  $('med-nick').addEventListener('keydown', ev => { if (ev.key === 'Enter') $('med-senha').focus(); });
   $('btn-mais30').addEventListener('click', async () => { try { await adm('bio_admin_estender', { p_seg: 30 }); await tickMed(); toast('+30 segundos'); } catch (e) { } });
   $('btn-encerrar').addEventListener('click', async () => { try { await adm('bio_admin_encerrar'); await tickMed(); } catch (e) { } });
   $('btn-lobby').addEventListener('click', async () => { try { await adm('bio_admin_lobby'); await tickMed(); } catch (e) { } });
@@ -1183,6 +1450,16 @@ function iniciarMed() {
   $('btn-editar').addEventListener('click', abrirEditor);
   $('btn-apresentar').addEventListener('click', () => { document.body.classList.add('apresentacao'); $('btn-sair-apres').hidden = false; });
   $('btn-sair-apres').addEventListener('click', () => { document.body.classList.remove('apresentacao'); $('btn-sair-apres').hidden = true; });
+  $('slider-rel').addEventListener('input', () => { $('val-rel').textContent = $('slider-rel').value; });
+  $('slider-rel').addEventListener('change', async () => { M.relevancia = parseInt($('slider-rel').value, 10) / 100; await recarregarRows(); });
+  $('chk-sem').checked = LS.get('bio_sem') !== '0';
+  $('chk-sem').addEventListener('change', async () => { LS.set('bio_sem', $('chk-sem').checked ? '1' : '0'); if ($('chk-sem').checked) Sem.carregar(); Sem.status(); await recarregarRows(); });
+  $('btn-sem-teste').addEventListener('click', async () => {
+    const o = $('sem-teste'); if (Sem.estado !== 'pronto') { o.textContent = 'Modelo ainda não carregado.'; return; }
+    const par = [['IA', 'inteligência artificial'], ['telemedicina', 'consulta remota'], ['IA', 'pizza de calabresa']];
+    const v = await Sem.embed(par.flat());
+    o.textContent = par.map((p, i) => p[0] + ' × ' + p[1] + ': ' + Math.round(Math.max(0, v[2 * i].reduce((a, x, k) => a + x * v[2 * i + 1][k], 0)) * 100) + '%').join(' · ');
+  });
   $('slider-sim').addEventListener('input', () => { $('val-sim').textContent = $('slider-sim').value; });
   $('slider-sim').addEventListener('change', async () => { M.limiar = parseInt($('slider-sim').value, 10) / 100; await recarregarRows(); });
   $('in-total').addEventListener('change', () => { M.total = Math.max(5, parseInt($('in-total').value, 10) || 25); LS.set('bio_total', M.total); M.sigs.ctl = null; renderMed(); });
@@ -1210,10 +1487,15 @@ function iniciarMed() {
   });
   const trocarSenha = async (ev) => {
     if (ev) ev.preventDefault();
-    const nova = prompt('Nova senha do mediador (mínimo 6 caracteres):'); if (!nova) return;
-    try { await adm('bio_admin_trocar_senha', { p_nova: nova }); M.senha = nova; SS.set('bio_med', nova); $('aviso-senha').hidden = true; toast('Senha trocada.'); } catch (e) { }
+    const nova = prompt('Nova senha (mínimo 6 caracteres):'); if (!nova) return;
+    try { await rpc('bio_monitor_trocar_senha', { p_nick: M.nick, p_senha: M.senha, p_nova: nova }); M.senha = nova; abrirPainelSessao(); toast('Senha trocada.'); } catch (e) { toast(e.message === 'senha_curta' ? 'A senha precisa de pelo menos 6 caracteres.' : 'Erro: ' + e.message); }
   };
-  $('btn-senha').addEventListener('click', trocarSenha); $('lnk-trocar-senha').addEventListener('click', trocarSenha);
+  $('btn-senha').addEventListener('click', trocarSenha);
+  $('btn-sair-med').addEventListener('click', sairPainel);
+  $('btn-voltar-geral').addEventListener('click', sairPainel);
+  $('chk-publica').addEventListener('change', async () => { try { await adm('bio_admin_opcoes', { p_nome: M.estado.sala_nome, p_publica: $('chk-publica').checked }); toast($('chk-publica').checked ? 'Sala visível na lista.' : 'Sala oculta da lista (só por QR/link).'); } catch (e) { } });
+  $('btn-cadastrar').addEventListener('click', cadastrarMonitor);
+  $('cad-senha').addEventListener('keydown', ev => { if (ev.key === 'Enter') cadastrarMonitor(); });
   $('res-tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (!b) return; M.tab = b.dataset.tab; M.sigs.res = null; renderMed(); });
   $('filtros-nuvem').addEventListener('click', ev => { const b = ev.target.closest('[data-f]'); if (!b) return; M.filtro = b.dataset.f; M.sigs.res = null; renderMed(); });
   $('sel-secao').addEventListener('change', () => { M.secaoVer = $('sel-secao').value; M.pergIdx = 0; M.sigs.res = null; renderMed(); });
@@ -1231,7 +1513,51 @@ function iniciarMed() {
     };
     rd.readAsText(f, 'UTF-8'); ev.target.value = '';
   });
-  const guardada = SS.get('bio_med'); if (guardada) medEntrar(guardada, true);
+  if (lerHash().modo === 'med' && !lerHash().convite) retomarPainel();
+}
+
+/* ===================== ADMIN GERAL ===================== */
+const G = { senha: null, loop: false, sig: null };
+async function gerEntrar(senha, silencioso) {
+  const er = $('ger-erro'); er.textContent = '';
+  try {
+    const r = await rpc('bio_geral_login', { p_senha: senha });
+    if (!r.ok) { if (!silencioso) er.textContent = 'Senha incorreta.'; SS.del('bio_ger'); return false; }
+    G.senha = senha; SS.set('bio_ger', senha); $('ger-login').hidden = true; $('ger-app').hidden = false;
+    if (!G.loop) { G.loop = true; (async function laco() { if (MODO === 'geral') await gerCarregar(); setTimeout(laco, 5000); })(); }
+    return true;
+  } catch (e) { if (!silencioso) er.textContent = 'Sem conexão com o servidor.'; return false; }
+}
+async function gadm(fn, args) {
+  try { return await rpc(fn, Object.assign({ p_senha: G.senha }, args || {})); }
+  catch (e) { toast({ senha_curta: 'Senha curta demais.', convite_curto: 'O código precisa de pelo menos 4 caracteres.' }[e.message] || ('Erro: ' + e.message)); throw e; }
+}
+function linkConvite(c) { return location.origin + location.pathname.replace(/index\.html$/i, '') + '#cadastro=' + encodeURIComponent(c); }
+async function gerCarregar() {
+  let r; try { r = await gadm('bio_geral_listar'); setConn(true); } catch (e) { setConn(false); return; }
+  const sig = JSON.stringify(r); if (G.sig === sig) return; G.sig = sig;
+  $('ger-link').value = linkConvite(r.convite); G.convite = r.convite;
+  $('ger-total').textContent = '· ' + r.monitores.length + ' monitor(es)';
+  const tb = $('ger-tbody'); tb.textContent = '';
+  if (!r.monitores.length) { const tr = document.createElement('tr'), td = document.createElement('td'); td.colSpan = 5; td.textContent = 'Nenhum monitor cadastrado ainda. Envie o link de convite.'; tr.appendChild(td); tb.appendChild(tr); }
+  r.monitores.forEach(m => {
+    const tr = document.createElement('tr'); const td = t => { const c = document.createElement('td'); c.textContent = t; tr.appendChild(c); return c; };
+    td(m.nickname); td(m.nome || '—'); td(m.status ? ({ LOBBY: 'Na entrada', ABERTA: 'Rodada aberta', RESULTADOS: 'Resultados', FIM: 'Encerrada' }[m.status] || m.status) + (m.publica ? '' : ' · oculta') : '—'); td(m.n == null ? '—' : m.n);
+    const ac = document.createElement('td'); const bt = (t, cls, fn) => { const b = document.createElement('button'); b.className = 'btn btn-mini ' + cls; b.textContent = t; b.addEventListener('click', fn); ac.appendChild(b); };
+    if (m.sala) bt('Abrir painel', 'btn-or', () => { SS.set('bio_med', JSON.stringify({ nick: 'admin', senha: G.senha, sala: m.sala, geral: true })); location.hash = '#mediador'; location.reload(); });
+    bt('Redefinir senha', '', async () => { const n = prompt('Nova senha para ' + m.nickname + ' (mínimo 6 caracteres):'); if (!n) return; try { await gadm('bio_geral_resetar_monitor', { p_nick: m.nickname, p_nova: n }); toast('Senha redefinida.'); } catch (e) { } });
+    bt('Apagar', 'btn-perigo', async () => { if (!confirm('Apagar o monitor ' + m.nickname + ' e a sala dele, com todas as pessoas e respostas?')) return; try { await gadm('bio_geral_apagar_monitor', { p_nick: m.nickname }); G.sig = null; await gerCarregar(); } catch (e) { } });
+    tr.appendChild(ac); tb.appendChild(tr);
+  });
+}
+function iniciarGeral() {
+  const ir = () => gerEntrar($('ger-senha').value);
+  $('btn-ger-entrar').addEventListener('click', ir); $('ger-senha').addEventListener('keydown', ev => { if (ev.key === 'Enter') ir(); });
+  $('btn-ger-copiar').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('ger-link').value); toast('Link copiado.'); } catch (e) { $('ger-link').select(); toast('Selecione e copie (Ctrl+C).'); } });
+  $('btn-ger-convite').addEventListener('click', async () => { const c = prompt('Novo código do convite (mínimo 4 caracteres). Links antigos deixam de funcionar:', G.convite || ''); if (!c) return; try { await gadm('bio_geral_convite', { p_convite: c }); G.sig = null; await gerCarregar(); toast('Código trocado.'); } catch (e) { } });
+  $('btn-ger-senha').addEventListener('click', async () => { const n = prompt('Nova senha geral (mínimo 8 caracteres):'); if (!n) return; try { await gadm('bio_geral_trocar_senha', { p_nova: n }); G.senha = n; SS.set('bio_ger', n); toast('Senha geral trocada.'); } catch (e) { } });
+  $('btn-ger-sair').addEventListener('click', () => { SS.del('bio_ger'); location.reload(); });
+  const g = SS.get('bio_ger'); if (g && lerHash().modo === 'geral') gerEntrar(g, true);
 }
 
 /* ===================== INÍCIO ===================== */
@@ -1239,10 +1565,10 @@ let iniciado = false;
 function iniciar() {
   definirModo();
   if (iniciado) return; iniciado = true;
-  iniciarPart(); iniciarMed();
+  iniciarPart(); iniciarMed(); iniciarGeral();
 }
 window.addEventListener('hashchange', () => { definirModo(); });
-window.__BIO = { Motor, M, P, rpc };
+window.__BIO = { Sem, Motor, M, P, G, rpc };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
 </script>
 </body>

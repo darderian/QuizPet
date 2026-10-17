@@ -1,34 +1,24 @@
-# BioInova STOP! — PET Biomedicina
+# BioInova STOP! — v3 (várias salas, um monitor por sala)
 
-Dinâmica de inteligência coletiva (estilo "Stop" + ranking Kahoot) para oficinas de inovação.
-Site de 1 arquivo (`index.html`) + banco Supabase (`supabase_setup.sql`).
+Arquivos: `index.html` (o app) + `supabase_setup.sql` (banco). Publicação: GitHub Pages
+(https://darderian.github.io/QuizPet/).
 
-## Instalação (10 min)
-1. No Supabase: **SQL Editor → New query**, cole todo o `supabase_setup.sql` e rode (**apaga dados antigos**; pode rodar de novo sem problema).
-2. Em `index.html`, confira `CFG.URL` e `CFG.KEY` (a chave **anon** pode ficar pública; a proteção está no banco, que bloqueia as tabelas e só aceita as funções `bio_*`).
-3. Troque o `index.html` do repositório (`darderian/QuizPet`) por este. O site fica em https://darderian.github.io/QuizPet/ e o painel do mediador em https://darderian.github.io/QuizPet/#mediador.
-4. Entre no painel do mediador com a senha `MonitorPET`. A senha fica guardada no banco (hash). Como ela aparece neste arquivo SQL público, troque por outra (🔑 em "Mais opções") se o repositório for divulgado.
-5. **Ensaio:** com o painel aberto, use "🧪 Simular turma" (12 alunos de teste); abra uma rodada e clique de novo para eles responderem. Depois "Remover simulados" ou "Zerar tudo".
+## Instalar / atualizar
+1. Supabase → SQL Editor → cole todo o `supabase_setup.sql` → Run. **Atenção:** apaga os dados da versão anterior.
+2. Substitua o `index.html` no repositório (commit na branch main).
+3. **Logo em seguida** abra `.../#admin` (senha inicial `AdminPET-troque`) e troque a **senha geral** e o **código do convite** (inicial `PET2026`).
 
-## Como conduzir (≈ 16 min dos 25 min)
-| Tempo | Etapa |
-|---|---|
-| 0–3 | Projete o painel do mediador (QR Code); todos entram com apelido |
-| 3–10 | Seção 1: rodada (3:30) + STOP (quem completar tudo primeiro encurta o tempo para 20 s) + debate |
-| 10–14 | Seção 2: rodada (2:30) + debate |
-| 14–23 | Resultados (nuvem azul=consenso 5 pts, laranja=ideia única 10 pts), ranking, pódio |
-| 23–25 | Baixar CSV auditável e encerrar |
+## Papéis
+- **Admin geral (você):** `.../#admin` — copia o link de cadastro, lista monitores/salas, abre o painel de qualquer sala, redefine senha de monitor, apaga monitor+sala, troca convite e senha geral.
+- **Monitor:** recebe o link `.../#cadastro=CODIGO` (não público), escolhe apelido, título da sala e senha. Cada monitor tem **uma** sala (= uma dinâmica, com suas seções). Depois entra por `.../#mediador` com apelido + senha. Sua senha mestra também abre qualquer sala.
+- **Participante:** abre o link do app, busca a sala pelo **título ou nome do monitor**, ou escaneia o QR do telão (`#sala=CÓDIGO`). Apelidos só precisam ser únicos dentro da sala.
 
-A barra "plano de tempo" do painel avisa se o roteiro passa do total da oficina (padrão 25 min, editável em "Mais opções").
+## Rodada
+O monitor aperta Iniciar → os celulares mostram "Prepare-se… 5" (tela carrega antes), depois o cronômetro corre. STOP encurta o prazo (padrão 20 s). Os pontos só são calculados com o painel do monitor aberto.
+Botões **Ensaio** (bots) e **Zerar** afetam só a sala do monitor.
 
-## Várias seções / temas
-**Editar roteiro**: cada seção tem tema central, perguntas, tempo, debate e STOP. Há modelos (rápido, completo, vazio) e dá para importar texto. O mediador abre as seções na ordem que quiser; os pontos somam.
-
-## Palavras ou frases
-Os campos aceitam palavra ou frase curta (até 120 caracteres). O agrupamento compara palavras-chave e radicais, então "Automatizar laudos" e "Automação de laudos" se juntam, mas ideias com redação muito diferente podem ficar separadas: ajuste a sensibilidade ou una à mão na Auditoria.
-
-## Auditoria
-Aba **Auditoria**: unir, separar ou anular respostas. A aba **Síntese** e o CSV refletem os ajustes.
-
-## Segurança
-Tabelas fechadas (RLS + sem permissão para `anon`); tudo passa por funções `SECURITY DEFINER`. Respostas dos outros ficam ocultas durante a rodada. Textos digitados são sempre exibidos como texto (sem XSS). Não há dependências externas (funciona offline após carregar; QR gerado no próprio arquivo).
+## Pontuação e qualidade das respostas (automático, sem custo de tempo)
+- Ruído evidente (teclado batido, "kkkk", sem vogais, "não sei", "nada"…) vale 0 e nunca forma consenso.
+- Modelo semântico opcional (transformers.js, carregado **só no navegador do mediador**, ~100 MB na 1ª vez, depois fica em cache): agrupa por significado ("IA" = "inteligência artificial", "telemedicina" = "consulta remota") e zera respostas fora do assunto da pergunta. Se não carregar, o app usa só comparação de texto.
+- Painel do mediador: *Sensibilidade do agrupamento* (padrão 62%) e *Rigor do filtro de assunto* (padrão 15%; 0 desliga). Botão "Testar modelo" mostra a similaridade de pares de exemplo, para calibrar. Na Auditoria, "Aceitar" devolve os pontos de uma resposta marcada.
+- Dica: abra o painel uma vez com internet boa antes da oficina para o modelo ficar em cache.
