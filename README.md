@@ -20,5 +20,7 @@ Botões **Ensaio** (bots) e **Zerar** afetam só a sala do monitor.
 ## Pontuação e qualidade das respostas (automático, sem custo de tempo)
 - Ruído evidente (teclado batido, "kkkk", sem vogais, "não sei", "nada"…) vale 0 e nunca forma consenso.
 - Modelo semântico opcional (transformers.js, carregado **só no navegador do mediador**, ~100 MB na 1ª vez, depois fica em cache): agrupa por significado ("IA" = "inteligência artificial", "telemedicina" = "consulta remota") e zera respostas fora do assunto da pergunta. Se não carregar, o app usa só comparação de texto.
-- Painel do mediador: *Sensibilidade do agrupamento* (padrão 62%) e *Rigor do filtro de assunto* (padrão 15%; 0 desliga). Botão "Testar modelo" mostra a similaridade de pares de exemplo, para calibrar. Na Auditoria, "Aceitar" devolve os pontos de uma resposta marcada.
+- O painel do monitor mostra só o essencial. Ferramentas de teste (simular turma, sliders, testar modelo, **Calibração**) ficam no bloco "Desenvolvedor", visível ao abrir qualquer painel pelo `#admin` ou após visitar `.../#dev` (desliga com `#dev-off`).
+- **Calibração:** no bloco Desenvolvedor, "Carregar exemplos" → "Calcular" roda um conjunto de teste com o modelo real e sugere o melhor corte de relevância e o melhor limiar de agrupamento; "Aplicar valores" usa na sessão. Passe-me os números para virarem o padrão de todos.
+- Na Auditoria, "Aceitar" devolve os pontos de uma resposta marcada.
 - Dica: abra o painel uma vez com internet boa antes da oficina para o modelo ficar em cache.

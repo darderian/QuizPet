@@ -24,6 +24,7 @@ button,input,select,textarea{font:inherit}
 .conn.ok{background:#14543d}.conn.err{background:#7a2323}
 .wrap{max-width:560px;margin:0 auto;padding:16px}
 .timer.pre,.timer-gigante.pre{font-size:.5em;letter-spacing:0}
+.dev-only{display:none}body.dev .dev-only{display:block}
 .sala-box{background:#EAF0F8;border-radius:12px;padding:10px 12px;margin-bottom:12px;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
 .sala-box b{font-size:19px;color:var(--n8)}
 .sala-item{display:block;width:100%;text-align:left;background:#fff;border:2px solid #C9D6E8;border-radius:12px;padding:10px 12px;margin:8px 0;cursor:pointer;color:var(--ink);font:inherit}
@@ -332,32 +333,37 @@ body.apresentacao .controles{display:none}
         <button class="btn" id="btn-fim">🏁 Pódio final</button>
       </div>
 
-      <h3>Ensaio e limpeza</h3>
-      <button class="btn" id="btn-ensaio">🧪 Simular turma (12 alunos)</button>
-      <button class="btn" id="btn-limpar-ensaio">Remover simulados</button>
-      <button class="btn btn-perigo" id="btn-zerar">🗑 Zerar tudo (pessoas e respostas)</button>
-      <p class="dica" style="color:var(--n3)">Ensaio: com a rodada aberta, clique em Simular para os alunos de teste responderem sozinhos.</p>
-
-      <h3>Apresentação</h3>
+      <h3>Apresentação e relatório</h3>
       <button class="btn" id="btn-apresentar">🖥 Modo apresentação (esconde este painel)</button>
-      <label class="chk">Sensibilidade do agrupamento: <b id="val-sim">62</b>%</label>
-      <input type="range" id="slider-sim" min="45" max="90" value="62" style="width:100%;accent-color:#F28C28">
-      <p class="dica" style="color:var(--n3)">Mais baixo junta ideias parecidas; mais alto separa. Dá para unir ou separar à mão na aba Auditoria.</p>
-      <label class="chk">Rigor do filtro de assunto: <b id="val-rel">15</b>%</label>
-      <input type="range" id="slider-rel" min="0" max="40" value="15" style="width:100%;accent-color:#F28C28">
-      <label class="chk"><input type="checkbox" id="chk-sem" checked> Usar modelo semântico (só neste aparelho; baixa ~100 MB na 1ª vez)</label>
-      <p class="dica" id="sem-status" style="color:var(--n3)"></p>
-      <button class="btn btn-mini" id="btn-sem-teste" type="button">Testar modelo</button> <span class="dica" id="sem-teste" style="color:var(--n3)"></span>
-      <p class="dica" style="color:var(--n3)">Respostas sem sentido ou fora do assunto valem 0 automaticamente (aparecem na Auditoria; o botão "Aceitar" devolve os pontos). Rigor 0 desliga o filtro de assunto.</p>
-
       <button class="btn" id="btn-csv">📥 Baixar relatório (CSV)</button>
+      <p class="dica" id="sem-status" style="color:var(--n3)"></p>
+
       <details>
         <summary>Mais opções</summary>
         <label class="chk" style="margin-top:10px">Duração total da oficina (min)
           <input type="number" id="in-total" min="5" max="180" value="25" style="width:80px;padding:4px 8px"></label>
         <button class="btn" id="btn-limpar-ajustes">🧽 Desfazer ajustes manuais da seção</button>
         <button class="btn btn-perigo" id="btn-limpar-secao">🧹 Apagar respostas da seção</button>
-        <button class="btn" id="btn-senha">🔑 Trocar senha do mediador</button>
+        <button class="btn btn-perigo" id="btn-zerar">🗑 Zerar sala (pessoas e respostas)</button>
+        <button class="btn" id="btn-senha">🔑 Trocar senha do monitor</button>
+      </details>
+
+      <details class="dev-only" id="dev-box">
+        <summary>🛠 Desenvolvedor</summary>
+        <button class="btn" id="btn-ensaio">🧪 Simular turma (12 alunos)</button>
+        <button class="btn" id="btn-limpar-ensaio">Remover simulados</button>
+        <label class="chk">Sensibilidade do agrupamento: <b id="val-sim">62</b>%</label>
+        <input type="range" id="slider-sim" min="45" max="90" value="62" style="width:100%;accent-color:#F28C28">
+        <label class="chk">Rigor do filtro de assunto: <b id="val-rel">30</b>%</label>
+        <input type="range" id="slider-rel" min="0" max="60" value="30" style="width:100%;accent-color:#F28C28">
+        <label class="chk"><input type="checkbox" id="chk-sem" checked> Usar modelo semântico</label>
+        <button class="btn btn-mini" id="btn-sem-teste" type="button">Testar modelo</button> <span class="dica" id="sem-teste" style="color:var(--n3)"></span>
+        <h3>Calibração (conjunto de teste)</h3>
+        <p class="dica" style="color:var(--n3)">Relevância: <code>tema | resposta | ok</code> ou <code>fora</code>. Agrupamento: <code>grupo | texto</code>, linha em branco separa perguntas.</p>
+        <textarea id="cal-rel" rows="5" style="width:100%" placeholder="tema | resposta | ok/fora"></textarea>
+        <textarea id="cal-grp" rows="5" style="width:100%;margin-top:6px" placeholder="grupo | texto"></textarea>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-mini" id="btn-cal-ex" type="button">Carregar exemplos</button><button class="btn btn-mini" id="btn-cal" type="button">Calcular</button><button class="btn btn-mini" id="btn-cal-aplicar" type="button" disabled>Aplicar valores</button></div>
+        <pre id="cal-out" style="white-space:pre-wrap;font-size:12px;color:var(--n3);margin-top:6px"></pre>
       </details>
     </aside>
 
@@ -587,10 +593,14 @@ const Motor = (function () {
     if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);
     return w;
   }
-  function chave(s) {
+  // texto normalizado com siglas/sinônimos expandidos ("IA" -> "inteligencia artificial"); é o que o modelo semântico lê
+  function expandir(s) {
     let t = String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\b([a-z])\.(?=[a-z]\.?)/g, '$1').replace(/[^a-z0-9]+/g, ' ').trim();
     for (const [re, rep] of ALIAS) t = t.replace(re, rep);
-    let toks = t.split(' ').filter(Boolean);
+    return t;
+  }
+  function chave(s) {
+    let toks = expandir(s).split(' ').filter(Boolean);
     const sem = toks.filter(w => !STOP.has(w));
     if (sem.length) toks = sem;
     return toks.map(stem).sort().join(' ');
@@ -645,10 +655,27 @@ const Motor = (function () {
     let melhor = null; cont.forEach(o => { if (!melhor || o.n > melhor.n) melhor = o; });
     return cap(melhor.txt);
   }
-  const vk = r => r.resposta.trim().toLowerCase();
+  const vk = r => expandir(r.resposta);
   function cos(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }   // vetores já normalizados
   const semEscala = c => Math.max(0, Math.min(1, (c - 0.15) / 0.6));    // cosseno 0.15→0, 0.75→1 (calibrado: sinônimos ≈0.55–0.6, não relacionados ≈0.03)
   const mediana = v => { const x = v.slice().sort((p, q) => p - q), m = x.length >> 1; return x.length ? (x.length % 2 ? x[m] : (x[m - 1] + x[m]) / 2) : 0; };
+  // Relevância de cada resposta = o maior entre: proximidade ao tema da pergunta e proximidade ao conjunto das demais respostas
+  function relevancias(lista, sem, cv) {
+    const m = new Map();
+    const cand = lista.map(r => ({ r, v: sem.vec(vk(r)) })).filter(x => x.v);
+    const soma = new Float64Array(cv.length); cand.forEach(x => { for (let i = 0; i < soma.length; i++) soma[i] += x.v[i]; });
+    cand.forEach(x => {
+      let sc = cos(x.v, cv);
+      if (cand.length >= 4) {
+        const o = new Float64Array(soma.length); let n = 0;
+        for (let i = 0; i < o.length; i++) { o[i] = soma[i] - x.v[i]; n += o[i] * o[i]; }
+        n = Math.sqrt(n) || 1; let c2 = 0; for (let i = 0; i < o.length; i++) c2 += x.v[i] * o[i] / n;
+        sc = Math.max(sc, c2);
+      }
+      m.set(x.r.id, sc);
+    });
+    return m;
+  }
   // rows: linhas completas (com cluster_manual e invalida). `sem` (opcional) = { vec(txt), ctx(chave), corte }.
   // Devolve cópias com cluster/freq/pontos recalculados. Linhas "fora" (ruído/fora do tema) valem 0 e não formam consenso.
   function processar(rows, limiar, sem) {
@@ -664,10 +691,10 @@ const Motor = (function () {
       const fora = new Map();
       autos0.forEach(r => { if (lixo(r.resposta)) fora.set(r.id, 'lixo'); });
       const cv = sem && sem.ctx ? sem.ctx(gk) : null;
+      const relv = cv ? relevancias(autos0.filter(r => !fora.has(r.id)), sem, cv) : new Map();
       if (cv && sem.corte > 0) {
-        const rel = new Map(); autos0.forEach(r => { if (fora.has(r.id)) return; const v = sem.vec(vk(r)); if (v) rel.set(r.id, cos(v, cv)); });
-        const med = mediana(Array.from(rel.values()));
-        rel.forEach((c, id) => { if (c < sem.corte && c < med * 0.6) fora.set(id, 'tema'); });
+        const med = mediana(Array.from(relv.values()));
+        relv.forEach((c, id) => { if (c < sem.corte && c < med * 0.7) fora.set(id, 'tema'); });
       }
       const autos = autos0.filter(r => !fora.has(r.id)).map(r => ({ r, k: chave(r.resposta) }))
         .sort((x, y) => x.k < y.k ? -1 : x.k > y.k ? 1 : (x.r.id < y.r.id ? -1 : 1));
@@ -677,7 +704,7 @@ const Motor = (function () {
       const N = uni.size, idf = new Map(); df.forEach((d, t) => idf.set(t, 1 + Math.log((N + 1) / (d + 1))));
       const simR = (ra, ka, rb, kb) => {
         let s = simLex(ka, kb, idf);
-        if (sem && sem.vec) { const va = sem.vec(vk(ra)), vb = sem.vec(vk(rb)); if (va && vb) s = Math.max(s, semEscala(cos(va, vb))); }
+        if (sem && sem.vec) { const ea = vk(ra), eb = vk(rb); if (ea.length >= 4 && eb.length >= 4) { const va = sem.vec(ea), vb = sem.vec(eb); if (va && vb) s = Math.max(s, semEscala(cos(va, vb))); } }
         return s;
       };
       manuais.forEach(r => {
@@ -710,10 +737,10 @@ const Motor = (function () {
       vivo.forEach(i => clusters.push({ gid: 'a:' + cs[i].k + ':' + cs[i].rep.id, sk: cs[i].k, itens: cs[i].itens, fixo: null }));
       clusters.forEach(c => {
         const label = c.fixo || rotulo(c.itens), freq = c.itens.length, pontos = freq === 1 ? 10 : 5;
-        c.itens.forEach(r => out.push(Object.assign({}, r, { cluster: label, freq, pontos })));
+        c.itens.forEach(r => out.push(Object.assign({}, r, { cluster: label, freq, pontos, rel: relv.has(r.id) ? relv.get(r.id) : null })));
       });
       lista.filter(r => r.invalida).forEach(r => out.push(Object.assign({}, r, { cluster: null, freq: 0, pontos: 0 })));
-      autos0.filter(r => fora.has(r.id)).forEach(r => out.push(Object.assign({}, r, { cluster: null, freq: 0, pontos: 0, fora: fora.get(r.id) })));
+      autos0.filter(r => fora.has(r.id)).forEach(r => out.push(Object.assign({}, r, { cluster: null, freq: 0, pontos: 0, fora: fora.get(r.id), rel: relv.has(r.id) ? relv.get(r.id) : null })));
     });
     return out;
   }
@@ -752,7 +779,7 @@ const Motor = (function () {
     });
     return '﻿' + linhas.join('\r\n');
   }
-  return { chave, sim: simLex, lixo, processar, ranking, clustersDe, gerarCSV };
+  return { chave, expandir, relevancias, mediana, sim: simLex, lixo, processar, ranking, clustersDe, gerarCSV };
 })();
 window.Motor = Motor;
 </script>
@@ -1045,7 +1072,7 @@ function htmlPlano(p) {
   return '<b>⏱ ≈ ' + Math.round(p.usado) + ' min de ' + p.total + ' min</b> ' + (p.folga >= 0 ? '(sobram ' + Math.round(p.folga) + ' min)' : '<span style="color:#ff8f86">(estoura em ' + Math.round(-p.folga) + ' min!)</span>') + '<div class="barra"><i style="width:' + pct + '%"></i></div><small style="color:var(--n3)">Inclui 3 min de entrada, tempo de cada rodada, debate e 2 min de encerramento.</small>';
 }
 
-const M = { app: false, nick: null, sala: null, geral: false, convite: null, publicaInit: false, senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.62, relevancia: 0.15, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
+const M = { app: false, nick: null, sala: null, geral: false, convite: null, publicaInit: false, senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.62, relevancia: 0.30, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
 
 async function medEntrar(nick, pwd, silencioso) {
   const er = $('med-erro'); er.textContent = '';
@@ -1056,12 +1083,14 @@ async function medEntrar(nick, pwd, silencioso) {
     return true;
   } catch (e) { if (!silencioso) er.textContent = 'Sem conexão com o servidor.'; return false; }
 }
+const devAtivo = () => M.geral || LS.get('bio_dev') === '1';
 function abrirPainel(c) {
   M.nick = c.nick; M.senha = c.senha; M.sala = c.sala; M.geral = !!c.geral; M.app = true;
   SS.set('bio_med', JSON.stringify(c));
   $('med-login').hidden = true; $('med-cadastro').hidden = true; $('med-app').hidden = false;
   $('med-quem').textContent = c.geral ? 'Admin geral · sala ' + c.sala : 'Monitor: ' + c.nick;
   $('btn-voltar-geral').hidden = !c.geral; $('btn-senha').hidden = !!c.geral;
+  document.body.classList.toggle('dev', devAtivo());
   iniciarLacoMed();
 }
 async function retomarPainel() {
@@ -1151,18 +1180,19 @@ const Sem = {
   },
   status() {
     const el = $('sem-status'); if (!el) return;
-    el.textContent = !this.ligado() ? 'Modelo desligado: usando só comparação de texto.'
-      : this.estado === 'pronto' ? '✓ Modelo semântico pronto (agrupa por significado e filtra fora do assunto).'
-      : this.estado === 'carregando' ? '⏳ Carregando modelo… (se demorar, a rodada segue com comparação de texto)'
-      : this.estado === 'erro' ? '⚠ Modelo indisponível (' + this.erro + '). Usando comparação de texto.' : '';
+    const dev = document.body.classList.contains('dev');
+    el.textContent = !this.ligado() ? 'Análise inteligente desligada: agrupando só por texto.'
+      : this.estado === 'pronto' ? '✓ Análise inteligente ativa (agrupa por significado e ignora respostas fora do assunto).'
+      : this.estado === 'carregando' ? '⏳ Preparando a análise inteligente… a rodada funciona normalmente enquanto isso.'
+      : this.estado === 'erro' ? '⚠ Análise inteligente indisponível neste aparelho: agrupando só por texto.' + (dev ? ' (' + this.erro + ')' : '') : '';
   },
   // calcula vetores que faltam (respostas e "contexto" = título da seção + pergunta)
   async garantir(rows) {
     if (this.estado !== 'pronto' || !this.ligado() || !this.embed) return false;
     const falta = new Set(), ctxs = new Map();
     rows.forEach(r => {
-      const t = r.resposta.trim().toLowerCase(); if (t && !this.vecs.has(t)) falta.add(t);
-      const k = r.secao_id + '|' + r.pergunta_idx; if (!this.ctx.has(k)) ctxs.set(k, (r.secao_titulo || '') + '. ' + (r.pergunta || ''));
+      const t = Motor.expandir(r.resposta); if (t && !this.vecs.has(t)) falta.add(t);
+      const k = r.secao_id + '|' + r.pergunta_idx; if (!this.ctx.has(k)) ctxs.set(k, [r.secao_titulo, r.pergunta].filter(Boolean).join('. '));
     });
     const L = Array.from(falta), C = Array.from(ctxs.entries());
     if (!L.length && !C.length) return false;
@@ -1172,6 +1202,178 @@ const Sem = {
   },
   vista() { return { vec: t => this.vec(t), ctx: k => this.ctxDe(k), corte: M.relevancia }; }
 };
+/* ---- Calibração (só desenvolvedor): mede o modelo real com um conjunto de teste e sugere os melhores valores ---- */
+const CAL_REL = `Competências humanas fundamentais | Empatia | ok
+Competências humanas fundamentais | Comunicação | ok
+Competências humanas fundamentais | Pensamento crítico | ok
+Competências humanas fundamentais | Trabalho em equipe | ok
+Competências humanas fundamentais | Criatividade | ok
+Competências humanas fundamentais | Ética | ok
+Competências humanas fundamentais | Liderança | ok
+Competências humanas fundamentais | Cascata | fora
+Competências humanas fundamentais | Pizza de calabresa | fora
+Competências humanas fundamentais | Futebol | fora
+Tarefas que poderão ser automatizadas | Laudos de exames | ok
+Tarefas que poderão ser automatizadas | Triagem de imagens | ok
+Tarefas que poderão ser automatizadas | Agendamento de consultas | ok
+Tarefas que poderão ser automatizadas | Digitação de prontuários | ok
+Tarefas que poderão ser automatizadas | Pipetagem | ok
+Tarefas que poderão ser automatizadas | Contagem de células | ok
+Tarefas que poderão ser automatizadas | Geleia | fora
+Tarefas que poderão ser automatizadas | Praia | fora
+Tarefas que poderão ser automatizadas | Carnaval | fora
+Conhecimentos digitais necessários | Programação | ok
+Conhecimentos digitais necessários | Python | ok
+Conhecimentos digitais necessários | Estatística | ok
+Conhecimentos digitais necessários | Bancos de dados | ok
+Conhecimentos digitais necessários | Segurança da informação | ok
+Conhecimentos digitais necessários | Inteligência artificial | ok
+Conhecimentos digitais necessários | Bicicleta | fora
+Conhecimentos digitais necessários | Feijoada | fora
+Conhecimentos digitais necessários | Violão | fora
+Novas atividades profissionais | Curador de dados | ok
+Novas atividades profissionais | Bioinformata | ok
+Novas atividades profissionais | Engenheiro de prompts | ok
+Novas atividades profissionais | Telemedicina | ok
+Novas atividades profissionais | Conselheiro genético | ok
+Novas atividades profissionais | Sensores vestíveis | ok
+Novas atividades profissionais | Cachorro-quente | fora
+Novas atividades profissionais | Novela das nove | fora
+Novas atividades profissionais | Surfe | fora
+Que tecnologia vai mudar mais a saúde | CRISPR | ok
+Que tecnologia vai mudar mais a saúde | Telemedicina | ok
+Que tecnologia vai mudar mais a saúde | Inteligência artificial | ok
+Que tecnologia vai mudar mais a saúde | Impressão 3D | ok
+Que tecnologia vai mudar mais a saúde | Wearables | ok
+Que tecnologia vai mudar mais a saúde | Vacinas de mRNA | ok
+Que tecnologia vai mudar mais a saúde | Bolo de cenoura | fora
+Que tecnologia vai mudar mais a saúde | Carro esportivo | fora
+Que tecnologia vai mudar mais a saúde | Samba | fora
+Principais barreiras da pesquisa no Brasil | Falta de investimento | ok
+Principais barreiras da pesquisa no Brasil | Burocracia | ok
+Principais barreiras da pesquisa no Brasil | Pouca valorização | ok
+Principais barreiras da pesquisa no Brasil | Falta de equipamentos | ok
+Principais barreiras da pesquisa no Brasil | Fuga de cérebros | ok
+Principais barreiras da pesquisa no Brasil | Chuva de verão | fora
+Principais barreiras da pesquisa no Brasil | Uva | fora
+Principais barreiras da pesquisa no Brasil | Dormir cedo | fora`;
+const CAL_GRP = `0 | IA
+0 | Inteligência artificial
+0 | uso de IA no diagnóstico
+1 | Machine learning
+1 | aprendizado de máquina
+1 | Redes neurais profundas
+2 | Ética em IA
+2 | viés nos algoritmos
+
+0 | Análise de dados
+0 | Ciência de dados
+0 | Data science
+1 | Big data
+1 | Grandes volumes de dados
+2 | Estatística
+2 | Bioestatística
+
+0 | Telemedicina
+0 | Telessaúde
+0 | Consulta remota
+0 | Atendimento a distância
+1 | Prontuário eletrônico
+1 | Registro digital do paciente
+
+0 | Empatia
+0 | Ter empatia
+1 | Comunicação
+1 | Comunicação clara com paciente
+2 | Trabalho em equipe
+2 | Equipe multidisciplinar
+2 | Colaboração entre áreas
+
+0 | Automação de laudos
+0 | Laudos automáticos
+0 | Laudo gerado por computador
+1 | Automação laboratorial
+1 | Robôs de pipetagem
+1 | Robótica no laboratório
+
+0 | Privacidade de dados
+0 | LGPD
+0 | Proteção de dados
+0 | Segurança dos dados do paciente
+1 | Ética na pesquisa
+1 | Comitê de ética
+1 | Consentimento informado
+
+0 | Edição genética
+0 | CRISPR
+0 | Edição de genes com CRISPR
+1 | Sequenciamento de DNA
+1 | Sequenciamento genético
+1 | Genômica
+
+0 | Falta de investimento
+0 | Pouco investimento em pesquisa
+0 | Falta de verba
+0 | Financiamento escasso
+1 | Burocracia
+1 | Burocracia da Anvisa
+1 | Demora na aprovação`;
+const CAL = { corte: null, limiar: null };
+async function calibrar() {
+  const out = $('cal-out'); CAL.corte = CAL.limiar = null; $('btn-cal-aplicar').disabled = true;
+  if (Sem.estado !== 'pronto') { out.textContent = 'O modelo semântico ainda não carregou.'; return; }
+  const linhas = [];
+  let txt = '';
+  // --- relevância ---
+  const rel = $('cal-rel').value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a.length >= 3 && a[1]);
+  if (rel.length) {
+    const rows = rel.map((a, i) => ({ id: 'c' + i, secao_id: a[0], pergunta_idx: 0, secao_titulo: '', pergunta: a[0], resposta: a[1], fora: /^f/i.test(a[2]) }));
+    await Sem.garantir(rows);
+    const por = new Map(); rows.forEach(r => { if (!por.has(r.secao_id)) por.set(r.secao_id, []); por.get(r.secao_id).push(r); });
+    const pts = [];
+    por.forEach((lista, k) => {
+      const m = Motor.relevancias(lista, { vec: t => Sem.vecs.get(t) }, Sem.ctx.get(k + '|0'));
+      const med = Motor.mediana(Array.from(m.values()));
+      lista.forEach(r => { if (m.has(r.id)) pts.push({ r, s: m.get(r.id), med }); });
+    });
+    let melhor = null; const tab = [];
+    for (let c = 0.05; c <= 0.601; c += 0.025) {
+      let tp = 0, fp = 0, fn = 0;
+      pts.forEach(p => { const pred = p.s < c && p.s < p.med * 0.7; if (pred && p.r.fora) tp++; else if (pred) fp++; else if (p.r.fora) fn++; });
+      const P = tp + fp ? tp / (tp + fp) : 1, R = tp + fn ? tp / (tp + fn) : 0, f = (P + R) ? (1.25 * P * R) / (0.25 * P + R) : 0;   // F0,5: prefere não anular respostas boas
+      tab.push('  corte ' + Math.round(c * 100) + '%: precisão ' + Math.round(P * 100) + '% · pega ' + Math.round(R * 100) + '% do que é fora · anulou ' + fp + ' boa(s)');
+      if (!melhor || f > melhor.f + 1e-9) melhor = { c, f, fp, tp, fn };
+    }
+    const ok = pts.filter(p => !p.r.fora).map(p => p.s), fo = pts.filter(p => p.r.fora).map(p => p.s);
+    const med = a => a.length ? Math.round(Motor.mediana(a) * 100) : 0;
+    txt += 'RELEVÂNCIA (' + pts.length + ' respostas)\n  mediana ok: ' + med(ok) + '% · mediana fora: ' + med(fo) + '%\n' + tab.join('\n') + '\n  → melhor corte: ' + Math.round(melhor.c * 100) + '%\n';
+    const erros = pts.filter(p => (p.s < melhor.c && p.s < p.med * 0.7) !== p.r.fora).map(p => '    ' + (p.r.fora ? 'NÃO PEGOU' : 'ANULOU BOA') + ': ' + p.r.resposta + ' (' + Math.round(p.s * 100) + '%) em "' + p.r.secao_id + '"');
+    if (erros.length) txt += '  erros no melhor corte:\n' + erros.join('\n') + '\n';
+    CAL.corte = melhor.c;
+  }
+  // --- agrupamento ---
+  const blocos = $('cal-grp').value.split(/\n\s*\n/).map(b => b.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a.length >= 2 && a[1]));
+  if (blocos.some(b => b.length)) {
+    const rows = []; blocos.forEach((b, k) => b.forEach((a, i) => rows.push({ id: 'g' + k + '_' + i, secao_id: 'g' + k, pergunta_idx: 0, secao_titulo: '', pergunta: '', resposta: a[1], grupo: a[0], nickname: 'n' + rows.length, cluster_manual: null, invalida: false })));
+    await Sem.garantir(rows);
+    let melhor = null; const tab = [];
+    for (let l = 0.45; l <= 0.901; l += 0.05) {
+      const res = Motor.processar(rows, l, { vec: t => Sem.vecs.get(t), ctx: () => null, corte: 0 });
+      const lab = new Map(res.map(r => [r.id, r.cluster]));
+      let tp = 0, fp = 0, fn = 0;
+      blocos.forEach((b, k) => { for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) {
+        const igual = b[i][0] === b[j][0], junta = lab.get('g' + k + '_' + i) === lab.get('g' + k + '_' + j);
+        if (igual && junta) tp++; else if (igual) fn++; else if (junta) fp++; } });
+      const P = tp + fp ? tp / (tp + fp) : 1, R = tp + fn ? tp / (tp + fn) : 0, f = (P + R) ? 2 * P * R / (P + R) : 0;
+      tab.push('  limiar ' + Math.round(l * 100) + '%: precisão ' + Math.round(P * 100) + '% · revocação ' + Math.round(R * 100) + '% · F1 ' + f.toFixed(2));
+      if (!melhor || f > melhor.f + 1e-9) melhor = { l, f };
+    }
+    txt += '\nAGRUPAMENTO (' + rows.length + ' respostas)\n' + tab.join('\n') + '\n  → melhor limiar: ' + Math.round(melhor.l * 100) + '%\n';
+    CAL.limiar = melhor.l;
+  }
+  out.textContent = txt || 'Cole ou carregue exemplos primeiro.';
+  $('btn-cal-aplicar').disabled = CAL.corte == null && CAL.limiar == null;
+}
 async function processarEGravar() {
   if (M.processando) return; M.processando = true;
   try {
@@ -1315,7 +1517,7 @@ function renderAudit() {
     const tr = document.createElement('tr'); if (r.invalida || r.fora) tr.className = 'anulada';
     if (r.fora) { /* marcada automaticamente */ }
     const td = (t) => { const c = document.createElement('td'); c.textContent = t; return c; };
-    tr.appendChild(td(r.nickname)); tr.appendChild(td(r.resposta + (r.fora ? (r.fora === 'lixo' ? '  ⚠ sem sentido (auto)' : '  ⚠ fora do assunto (auto)') : '')));
+    tr.appendChild(td(r.nickname)); tr.appendChild(td(r.resposta + (r.fora ? (r.fora === 'lixo' ? '  ⚠ sem sentido (auto)' : '  ⚠ fora do assunto (auto)') : '') + (r.rel != null && devAtivo() ? '  · relevância ' + Math.round(Math.max(0, r.rel) * 100) + '%' : '')));
     const tg = document.createElement('td'); const sl = document.createElement('select'); sl.setAttribute('aria-label', 'Grupo de ' + r.nickname);
     const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sl.appendChild(o); };
     add('', '(automático) ' + (r.cluster || '')); labels.forEach(l => add('m:' + l, l)); add('__solo__', '(separar como ideia própria)');
@@ -1450,6 +1652,13 @@ function iniciarMed() {
   $('btn-editar').addEventListener('click', abrirEditor);
   $('btn-apresentar').addEventListener('click', () => { document.body.classList.add('apresentacao'); $('btn-sair-apres').hidden = false; });
   $('btn-sair-apres').addEventListener('click', () => { document.body.classList.remove('apresentacao'); $('btn-sair-apres').hidden = true; });
+  $('btn-cal-ex').addEventListener('click', () => { $('cal-rel').value = CAL_REL; $('cal-grp').value = CAL_GRP; });
+  $('btn-cal').addEventListener('click', async () => { $('cal-out').textContent = 'Calculando…'; try { await calibrar(); } catch (e) { $('cal-out').textContent = 'Erro: ' + e.message; } });
+  $('btn-cal-aplicar').addEventListener('click', async () => {
+    if (CAL.corte != null) { M.relevancia = CAL.corte; $('slider-rel').value = Math.round(CAL.corte * 100); $('val-rel').textContent = Math.round(CAL.corte * 100); }
+    if (CAL.limiar != null) { M.limiar = CAL.limiar; $('slider-sim').value = Math.round(CAL.limiar * 100); $('val-sim').textContent = Math.round(CAL.limiar * 100); }
+    toast('Valores aplicados nesta sessão.'); await recarregarRows();
+  });
   $('slider-rel').addEventListener('input', () => { $('val-rel').textContent = $('slider-rel').value; });
   $('slider-rel').addEventListener('change', async () => { M.relevancia = parseInt($('slider-rel').value, 10) / 100; await recarregarRows(); });
   $('chk-sem').checked = LS.get('bio_sem') !== '0';
@@ -1513,6 +1722,7 @@ function iniciarMed() {
     };
     rd.readAsText(f, 'UTF-8'); ev.target.value = '';
   });
+  if (location.hash === '#dev' || location.hash === '#dev-off') { LS.set('bio_dev', location.hash === '#dev' ? '1' : '0'); location.hash = '#mediador'; }
   if (lerHash().modo === 'med' && !lerHash().convite) retomarPainel();
 }
 
