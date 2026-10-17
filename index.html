@@ -647,7 +647,7 @@ const Motor = (function () {
   }
   const vk = r => r.resposta.trim().toLowerCase();
   function cos(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }   // vetores já normalizados
-  const semEscala = c => Math.max(0, Math.min(1, (c - 0.2) / 0.7));    // cosseno 0.2→0, 0.9→1
+  const semEscala = c => Math.max(0, Math.min(1, (c - 0.15) / 0.6));    // cosseno 0.15→0, 0.75→1 (calibrado: sinônimos ≈0.55–0.6, não relacionados ≈0.03)
   const mediana = v => { const x = v.slice().sort((p, q) => p - q), m = x.length >> 1; return x.length ? (x.length % 2 ? x[m] : (x[m - 1] + x[m]) / 2) : 0; };
   // rows: linhas completas (com cluster_manual e invalida). `sem` (opcional) = { vec(txt), ctx(chave), corte }.
   // Devolve cópias com cluster/freq/pontos recalculados. Linhas "fora" (ruído/fora do tema) valem 0 e não formam consenso.
