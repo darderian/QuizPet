@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1F3A">
+<title>BioInova STOP!</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --n9:#071428; --n8:#0B1F3A; --n7:#12305A; --n6:#1B4478; --n3:#8FB1DB; --n1:#E4EDF8;
+  --or:#F28C28; --or6:#DE7208; --or1:#FFEBD6;
+  --ink:#0B1F3A; --mut:#5B6B83; --ok:#1FA971; --err:#D64545; --azul:#5FB0FF;
+}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--n8);color:#fff;min-height:100vh;line-height:1.4;-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--n9);border-bottom:3px solid var(--or)}
+.brand{font-weight:800;letter-spacing:.3px;font-size:19px}
+.brand b{color:var(--or)}
+.sub{color:var(--n3);font-size:13px}
+.conn{margin-left:auto;font-size:12px;padding:3px 10px;border-radius:99px;background:#223a5e;white-space:nowrap}
+.conn.ok{background:#14543d}.conn.err{background:#7a2323}
+.wrap{max-width:560px;margin:0 auto;padding:16px}
+.card{background:#fff;color:var(--ink);border-radius:16px;padding:18px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
+.card h2{margin:.1em 0 .4em;font-size:21px}
+.centro{text-align:center}
+label{display:block;font-weight:700;margin:12px 0 4px;font-size:15px}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;padding:11px 12px;border:2px solid #C9D6E8;border-radius:10px;font-size:16px;color:var(--ink);background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--or);box-shadow:0 0 0 3px rgba(242,140,40,.25)}
+.dica{color:var(--mut);font-size:13px;margin:6px 0}
+.erro{color:var(--err);font-weight:700;min-height:1.2em;margin:8px 0}
+.btn{display:inline-block;border:0;border-radius:12px;padding:11px 16px;font-weight:800;cursor:pointer;background:var(--n6);color:#fff;font-size:15px}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-or{background:var(--or);color:#1a0f00}
+.btn-grande{width:100%;padding:15px;font-size:18px;margin-top:10px}
+.btn-claro{background:var(--n1);color:var(--n8)}
+.btn-perigo{background:#A93232}
+.btn-mini{padding:6px 10px;font-size:13px;border-radius:8px}
+.aviso{background:var(--or1);color:#5a3200;border-left:5px solid var(--or);padding:10px 12px;border-radius:10px;margin-bottom:12px;font-weight:600}
+.pulso{width:46px;height:46px;border-radius:50%;background:var(--or);margin:14px auto;animation:pulsa 1.4s infinite}
+@keyframes pulsa{0%{transform:scale(.8);opacity:.6}50%{transform:scale(1.1);opacity:1}100%{transform:scale(.8);opacity:.6}}
+/* jogo (celular) */
+.jogo-topo{background:var(--n8);color:#fff;margin:-18px -18px 14px;padding:14px 18px;border-radius:16px 16px 0 0;border-bottom:4px solid var(--or)}
+.jogo-topo h2{margin:0;font-size:18px;color:#fff}
+.timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:34px;color:var(--or)}
+.timer.baixo{color:#ff5a4d;animation:pisca .8s infinite}
+@keyframes pisca{50%{opacity:.45}}
+.barra{height:8px;background:#e3eaf5;border-radius:99px;overflow:hidden}
+.barra>i{display:block;height:100%;background:var(--or);width:0;transition:width .4s}
+.campo label{margin-top:10px}
+.stop-banner{background:#A93232;color:#fff;border-radius:10px;padding:10px 12px;font-weight:800;margin-bottom:10px}
+.res-linha{border-top:1px solid #E3EAF5;padding:10px 0}
+.res-linha small{color:var(--mut);display:block}
+.tag{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;font-weight:800;margin-top:4px}
+.tag.unica{background:var(--or1);color:#8a4500;border:2px solid var(--or)}
+.tag.consenso{background:#E1F0FF;color:#134c82;border:2px solid #3A8DDE}
+.tag.zero{background:#eee;color:#555;border:2px solid #bbb}
+.rank-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #EEF2F8}
+.rank-item .pos{width:30px;font-weight:800;color:var(--or6)}
+.rank-item .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-item.eu{background:var(--or1);border-radius:8px;padding-left:6px}
+.pts-grande{font-size:42px;font-weight:900;color:var(--or6);line-height:1}
+footer{padding:14px;text-align:center;color:var(--n3);font-size:12px}
+footer a{color:var(--n3)}
+/* mediador */
+.med-grid{display:grid;grid-template-columns:370px 1fr;min-height:calc(100vh - 58px)}
+.controles{background:var(--n9);padding:14px;overflow:auto;max-height:calc(100vh - 58px);border-right:1px solid #1d3558}
+.controles h3{margin:16px 0 8px;font-size:14px;color:var(--n3);text-transform:uppercase;letter-spacing:.6px}
+.controles .btn{width:100%;margin:4px 0;text-align:left}
+.controles .linha{display:flex;gap:6px}
+.controles .linha .btn{width:auto;flex:1;text-align:center}
+.secao-card{background:var(--n7);border-radius:12px;padding:10px 12px;margin:8px 0;border-left:5px solid #3b5f91}
+.secao-card.ativa{border-left-color:var(--or);background:#1a3f70}
+.secao-card.feita{border-left-color:var(--ok)}
+.secao-card b{display:block}
+.secao-card small{color:var(--n3)}
+.secao-card .btn{margin-top:8px;text-align:center}
+.plano{background:var(--n7);border-radius:12px;padding:10px 12px;font-size:14px}
+.plano .barra{background:#0a2142;margin:6px 0}
+.plano.estouro .barra>i{background:#ff5a4d}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600;margin:8px 0;font-size:14px}
+.chk input{width:18px;height:18px}
+details{margin-top:12px}
+summary{cursor:pointer;color:var(--n3);font-weight:700}
+.palco{padding:18px 26px;min-width:0}
+.palco-topo{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.palco-topo h1{font-size:24px;margin:0;flex:1}
+.pill{background:var(--n7);border-radius:99px;padding:6px 14px;font-weight:800;font-size:15px;white-space:nowrap}
+.pill.or{background:var(--or);color:#1a0f00}
+.lobby-grid{display:grid;grid-template-columns:auto 1fr;gap:34px;align-items:center;margin-top:10px}
+.qr{width:min(52vh,440px);background:#fff;border-radius:18px;padding:14px}
+.qr svg{display:block;width:100%;height:auto}
+.url-grande{font-size:22px;font-weight:800;color:var(--or);word-break:break-all;margin:6px 0 14px}
+.n-grande{font-size:80px;font-weight:900;line-height:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{background:var(--n7);border:2px solid #29507f;border-radius:99px;padding:5px 14px;font-weight:700;animation:entra .5s}
+@keyframes entra{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.timer-gigante{font-size:min(22vw,200px);font-weight:900;line-height:1;color:var(--or);font-variant-numeric:tabular-nums;text-align:center;margin:10px 0}
+.timer-gigante.baixo{color:#ff5a4d;animation:pisca .8s infinite}
+.progresso{height:26px;background:#0a2142;border-radius:99px;overflow:hidden;margin:10px 0}
+.progresso>i{display:block;height:100%;background:linear-gradient(90deg,var(--or6),var(--or));width:0;transition:width .5s}
+.stop-telao{background:#A93232;font-size:28px;font-weight:900;text-align:center;border-radius:14px;padding:12px;margin:10px 0;animation:pisca 1s infinite}
+.perg-lista{counter-reset:q;list-style:none;padding:0;margin:14px 0 0;display:grid;gap:8px}
+.perg-lista li{counter-increment:q;background:var(--n7);border-radius:12px;padding:10px 14px;font-size:20px}
+.perg-lista li::before{content:counter(q);display:inline-block;background:var(--or);color:#1a0f00;font-weight:900;border-radius:50%;width:30px;height:30px;text-align:center;line-height:30px;margin-right:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tab{background:var(--n7);color:#fff;border:0;border-radius:10px 10px 0 0;padding:10px 16px;font-weight:800;cursor:pointer;border-bottom:4px solid transparent}
+.tab.on{background:var(--n6);border-bottom-color:var(--or)}
+.seletores{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.seletores select{width:auto;max-width:100%}
+.chipq{background:var(--n7);color:#fff;border:2px solid #29507f;border-radius:12px;padding:8px 12px;font-weight:700;cursor:pointer;text-align:left;max-width:320px}
+.chipq.on{background:var(--or);color:#1a0f00;border-color:var(--or)}
+.legenda{display:flex;gap:14px;flex-wrap:wrap;font-weight:700;margin:6px 0 10px;align-items:center}
+.nuvem{display:flex;flex-wrap:wrap;gap:10px 14px;justify-content:center;align-items:center;background:var(--n9);border-radius:16px;padding:24px;min-height:300px}
+.palavra{font-weight:800;border-radius:99px;padding:4px 16px;line-height:1.15}
+.palavra.consenso{color:#071428;background:var(--azul)}
+.palavra.unica{color:#1a0f00;background:var(--or)}
+.palavra small{font-weight:700;opacity:.8;font-size:.55em}
+.vazio{color:var(--n3)}
+.filtros .btn{padding:5px 12px;font-size:13px}
+.filtros .btn.on{background:var(--or);color:#1a0f00}
+.rank-barra{display:grid;grid-template-columns:48px 260px 1fr 70px;gap:10px;align-items:center;margin:8px 0;font-size:20px}
+.rank-barra .bar{height:30px;background:#0a2142;border-radius:99px;overflow:hidden}
+.rank-barra .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--n6),var(--or))}
+.rank-barra .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800}
+.rank-barra small{display:block;font-size:12px;color:var(--n3);font-weight:600}
+.podio{display:flex;gap:14px;align-items:flex-end;justify-content:center;margin:20px 0}
+.podio>div{background:var(--n7);border-radius:14px 14px 0 0;text-align:center;padding:12px 18px;min-width:150px;font-weight:800}
+.podio .p1{height:210px;background:var(--or);color:#1a0f00}.podio .p2{height:160px}.podio .p3{height:120px}
+.podio .med{font-size:44px}
+.tabela-wrap{overflow:auto;max-height:62vh;border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--n7)}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid #1d3558;vertical-align:middle}
+th{background:var(--n9);position:sticky;top:0;color:var(--n3)}
+td select{padding:4px 6px;font-size:13px;border-radius:6px;max-width:240px}
+tr.anulada td{opacity:.45;text-decoration:line-through}
+.sint-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.sint{background:var(--n7);border-radius:14px;padding:14px}
+.sint h4{margin:0 0 8px;font-size:16px;color:var(--or)}
+.sint ol{margin:6px 0 8px;padding-left:20px}
+.overlay{position:fixed;inset:0;background:rgba(3,10,22,.78);z-index:50;overflow:auto;padding:20px}
+.overlay .painel{background:var(--n8);border:2px solid var(--or);border-radius:16px;max-width:900px;margin:0 auto;padding:18px}
+.overlay .card{margin:12px 0;background:var(--n7);color:#fff;box-shadow:none}
+.overlay label{color:var(--n3)}
+.grid2{display:grid;grid-template-columns:1fr 110px 110px 110px;gap:8px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#fff;color:var(--ink);padding:10px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.4);font-weight:700;z-index:99;max-width:90vw}
+body.apresentacao .med-grid{grid-template-columns:1fr}
+body.apresentacao .controles{display:none}
+.btn-flutuante{position:fixed;right:14px;bottom:14px;z-index:40;opacity:.55}
+.btn-flutuante:hover{opacity:1}
+@media (max-width:900px){
+  .med-grid{grid-template-columns:1fr}.controles{max-height:none}
+  .lobby-grid{grid-template-columns:1fr}.rank-barra{grid-template-columns:40px 1fr 60px}.rank-barra .bar{display:none}
+  .grid2{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="brand">🧬 BioInova <b>STOP!</b></span>
+  <span class="sub" id="topo-titulo"></span>
+  <span class="conn" id="conn">conectando…</span>
+</header>
+
+<main>
+<!-- ===================== PARTICIPANTE (CELULAR) ===================== -->
+<section id="view-part" class="wrap">
+  <div id="aviso-part" class="aviso" hidden></div>
+
+  <div id="s-conectando" class="card centro" hidden><div class="pulso"></div><p>Conectando…</p></div>
+
+  <div id="s-login" class="card" hidden>
+    <h2>Entrar na dinâmica</h2>
+    <label for="in-nick">Seu apelido (único na sala)</label>
+    <input id="in-nick" type="text" maxlength="30" autocomplete="off" autocapitalize="words" placeholder="Ex.: Ana_Biomed ou Grupo 4">
+    <p class="dica">Aparece no telão e no ranking. Prefira um apelido que não revele seu nome completo.</p>
+    <label for="in-prof">Profissão / área que você representa</label>
+    <input id="in-prof" type="text" list="lista-profs" maxlength="60" autocomplete="off" placeholder="Escolha ou digite">
+    <datalist id="lista-profs">
+      <option value="Biomédico(a)"><option value="Bioinformata"><option value="Engenheiro(a) biomédico(a)">
+      <option value="Enfermeiro(a)"><option value="Farmacêutico(a)"><option value="Médico(a)">
+      <option value="Nutricionista"><option value="Fisioterapeuta"><option value="Físico(a) médico(a)">
+      <option value="Cientista de dados em saúde"><option value="Técnico(a) de laboratório">
+      <option value="Pesquisador(a)"><option value="Estudante">
+    </datalist>
+    <p id="fb-login" class="erro" role="alert"></p>
+    <button id="btn-entrar" class="btn btn-or btn-grande">Entrar na sala</button>
+  </div>
+
+  <div id="s-lobby" class="card centro" hidden>
+    <h2 id="lobby-nome"></h2>
+    <p class="dica" id="lobby-prof"></p>
+    <div class="pulso"></div>
+    <p><b>Olhe para o telão.</b> A rodada começa em instantes.</p>
+    <p class="dica"><span id="lobby-n">0</span> pessoas na sala</p>
+    <button id="btn-trocar" class="btn btn-claro btn-mini">Não sou eu / trocar apelido</button>
+  </div>
+
+  <div id="s-jogo" class="card" hidden>
+    <div class="jogo-topo">
+      <div class="dica" style="color:var(--n3);margin:0" id="jogo-sec"></div>
+      <h2 id="jogo-titulo"></h2>
+      <div class="timer" id="t-jogo">0:00</div>
+    </div>
+    <div id="stop-mobile" class="stop-banner" hidden></div>
+    <p class="dica">Escreva ideias curtas: uma palavra ou uma frase curta (até ~10 palavras). Quanto mais original, mais pontos: ideia que só você teve vale <b>10</b>, ideia que outros também tiveram vale <b>5</b>.</p>
+    <div id="jogo-campos"></div>
+    <div class="barra" style="margin-top:14px"><i id="jogo-prog"></i></div>
+    <p class="dica" id="jogo-cont"></p>
+    <button id="btn-enviar" class="btn btn-or btn-grande">✋ STOP! Enviar respostas</button>
+    <p class="erro" id="fb-envio"></p>
+  </div>
+
+  <div id="s-enviado" class="card centro" hidden>
+    <div style="font-size:54px">✅</div>
+    <h2 id="env-titulo">Respostas enviadas!</h2>
+    <div id="stop-env" class="stop-banner" hidden></div>
+    <div class="timer" id="t-env" hidden>0:00</div>
+    <p class="dica" id="env-info"></p>
+    <div class="pulso"></div>
+  </div>
+
+  <div id="s-resultado" class="card" hidden></div>
+</section>
+
+<!-- ===================== MEDIADOR / TELÃO ===================== -->
+<section id="view-med" hidden>
+  <div id="med-login" class="wrap">
+    <div class="card">
+      <h2>Painel do mediador</h2>
+      <label for="med-senha">Senha</label>
+      <input id="med-senha" type="password" autocomplete="current-password">
+      <p id="med-erro" class="erro" role="alert"></p>
+      <button id="btn-med-entrar" class="btn btn-or btn-grande">Entrar</button>
+      <p class="dica">A senha fica no banco de dados, não no código do site.</p>
+    </div>
+  </div>
+
+  <div id="med-app" class="med-grid" hidden>
+    <aside class="controles" id="med-controles">
+      <div id="aviso-senha" class="aviso" hidden>⚠ Você está usando a senha padrão. <a href="#" id="lnk-trocar-senha" style="color:#5a3200">Trocar agora</a></div>
+      <h3>Roteiro da oficina</h3>
+      <div class="plano" id="plano-box"></div>
+      <div id="lista-secoes"></div>
+      <button class="btn btn-claro" id="btn-editar">✏ Editar roteiro / seções</button>
+
+      <h3>Durante a rodada</h3>
+      <div class="linha">
+        <button class="btn" id="btn-mais30">+30 s</button>
+        <button class="btn btn-or" id="btn-encerrar">⏹ Encerrar</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="chk-auto" checked> Encerrar sozinho (tempo acabou ou todos enviaram)</label>
+      <div class="linha">
+        <button class="btn" id="btn-lobby">↺ Lobby</button>
+        <button class="btn" id="btn-ver-res">📊 Resultados</button>
+        <button class="btn" id="btn-fim">🏁 Pódio final</button>
+      </div>
+
+      <h3>Ensaio e limpeza</h3>
+      <button class="btn" id="btn-ensaio">🧪 Simular turma (12 alunos)</button>
+      <button class="btn" id="btn-limpar-ensaio">Remover simulados</button>
+      <button class="btn btn-perigo" id="btn-zerar">🗑 Zerar tudo (pessoas e respostas)</button>
+      <p class="dica" style="color:var(--n3)">Ensaio: com a rodada aberta, clique em Simular para os alunos de teste responderem sozinhos.</p>
+
+      <h3>Apresentação</h3>
+      <button class="btn" id="btn-apresentar">🖥 Modo apresentação (esconde este painel)</button>
+      <label class="chk">Sensibilidade do agrupamento: <b id="val-sim">75</b>%</label>
+      <input type="range" id="slider-sim" min="60" max="95" value="75" style="width:100%;accent-color:#F28C28">
+      <p class="dica" style="color:var(--n3)">Mais baixo junta ideias parecidas; mais alto separa. Dá para unir ou separar à mão na aba Auditoria.</p>
+
+      <button class="btn" id="btn-csv">📥 Baixar relatório (CSV)</button>
+      <details>
+        <summary>Mais opções</summary>
+        <label class="chk" style="margin-top:10px">Duração total da oficina (min)
+          <input type="number" id="in-total" min="5" max="180" value="25" style="width:80px;padding:4px 8px"></label>
+        <button class="btn" id="btn-limpar-ajustes">🧽 Desfazer ajustes manuais da seção</button>
+        <button class="btn btn-perigo" id="btn-limpar-secao">🧹 Apagar respostas da seção</button>
+        <button class="btn" id="btn-senha">🔑 Trocar senha do mediador</button>
+      </details>
+    </aside>
+
+    <div class="palco" id="palco">
+      <div class="palco-topo">
+        <h1 id="palco-titulo">Painel</h1>
+        <span class="pill" id="c-part">0 na sala</span>
+        <span class="pill or" id="c-env">0 enviaram</span>
+      </div>
+
+      <div id="palco-lobby" hidden>
+        <div class="lobby-grid">
+          <div class="qr" id="qr-box"></div>
+          <div>
+            <div class="dica" style="color:var(--n3);font-size:18px">Aponte a câmera ou acesse:</div>
+            <div class="url-grande" id="url-app"></div>
+            <div class="n-grande" id="lobby-total">0</div>
+            <div style="font-size:20px">pessoas na sala</div>
+            <div class="chips" id="lobby-chips"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="palco-aberta" hidden>
+        <div style="font-size:18px;color:var(--n3)" id="ab-sec"></div>
+        <div style="font-size:30px;font-weight:900" id="ab-titulo"></div>
+        <div class="timer-gigante" id="ab-timer">0:00</div>
+        <div class="stop-telao" id="ab-stop" hidden></div>
+        <div class="progresso"><i id="ab-prog"></i></div>
+        <div style="text-align:center;font-size:20px;font-weight:800" id="ab-env"></div>
+        <ol class="perg-lista" id="ab-perg"></ol>
+      </div>
+
+      <div id="palco-res" hidden>
+        <div class="tabs" id="res-tabs">
+          <button class="tab on" data-tab="nuvem">☁ Nuvem</button>
+          <button class="tab" data-tab="ranking">🏆 Ranking</button>
+          <button class="tab" data-tab="audit">🔎 Auditoria</button>
+          <button class="tab" data-tab="sintese">📊 Síntese</button>
+        </div>
+        <div class="seletores" id="res-sel">
+          <select id="sel-secao" aria-label="Seção"></select>
+          <div id="chips-perg" class="seletores" style="margin:0"></div>
+        </div>
+        <div id="tab-nuvem">
+          <div class="legenda">
+            <span class="palavra consenso" style="font-size:15px">Consenso ×n = 5 pts</span>
+            <span class="palavra unica" style="font-size:15px">Ideia única = 10 pts</span>
+            <span class="filtros" id="filtros-nuvem">
+              <button class="btn btn-mini on" data-f="todos">Todas</button>
+              <button class="btn btn-mini" data-f="consenso">Só consensos</button>
+              <button class="btn btn-mini" data-f="unica">Só únicas</button>
+            </span>
+          </div>
+          <div class="nuvem" id="nuvem"></div>
+          <p class="dica" style="color:var(--n3);font-size:16px" id="nuvem-resumo"></p>
+        </div>
+        <div id="tab-ranking" hidden><div id="ranking"></div></div>
+        <div id="tab-audit" hidden>
+          <p class="dica" style="color:var(--n3)">Só você vê isto como mediador. Para unir duas ideias parecidas, mude o "Grupo" da linha. Para invalidar, use Anular. Os pontos de todos recalculam na hora.</p>
+          <div class="tabela-wrap"><table>
+            <thead><tr><th>Participante</th><th>Resposta</th><th>Grupo</th><th>Freq</th><th>Pts</th><th></th></tr></thead>
+            <tbody id="tbody-audit"></tbody></table></div>
+        </div>
+        <div id="tab-sintese" hidden><div class="sint-grid" id="sintese"></div></div>
+      </div>
+
+      <div id="palco-fim" hidden>
+        <h1 style="text-align:center;font-size:38px;margin:10px 0">🏁 Pódio final</h1>
+        <div class="podio" id="podio"></div>
+        <div id="fim-lista"></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-claro btn-mini btn-flutuante" id="btn-sair-apres" hidden>☰ Mostrar painel</button>
+
+  <div class="overlay" id="overlay-agenda" hidden>
+    <div class="painel">
+      <h2 style="margin-top:0">Roteiro da oficina</h2>
+      <p class="dica" style="color:var(--n3)">Cada seção tem um tema central e perguntas próprias. Você escolhe quais abrir e em que ordem durante a oficina.</p>
+      <label for="ed-titulo">Nome da oficina</label>
+      <input type="text" id="ed-titulo" maxlength="80">
+      <div class="seletores" style="margin-top:12px">
+        <select id="ed-preset" style="width:auto"><option value="">Carregar um modelo…</option>
+          <option value="rapido">Roteiro rápido (≈ 15 min)</option>
+          <option value="completo">Roteiro completo (≈ 22 min)</option>
+          <option value="vazio">Uma seção em branco</option></select>
+        <label class="btn btn-claro btn-mini" style="margin:0;color:var(--n8)">📂 Importar .txt/.csv/.json<input type="file" id="ed-file" accept=".txt,.csv,.json" hidden></label>
+        <button class="btn btn-mini" id="ed-add">➕ Nova seção</button>
+      </div>
+      <p class="dica" style="color:var(--n3)">Formato de texto para importar: uma linha <code># Título da seção | tempo em segundos | debate em segundos</code> e, abaixo, uma pergunta por linha.</p>
+      <div id="ed-secoes"></div>
+      <div class="plano" id="ed-plano"></div>
+      <p class="erro" id="ed-erro"></p>
+      <div class="linha" style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-or" id="ed-salvar">💾 Salvar roteiro</button>
+        <button class="btn btn-claro" id="ed-cancelar">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer id="rodape">Dinâmica BioInova STOP! · <a href="#mediador" id="lnk-med">Sou mediador</a></footer>
+<div class="toast" id="toast" hidden></div>
+
+<script id="lib-qr">
+/* Gerador de QR Code mínimo (modo byte, correção L, versões 1-10). Sem dependências. */
+const QR = (function () {
+  const TOTAL = [0, 26, 44, 70, 100, 134, 172, 196, 242, 292, 346];
+  const ECLEN = [0, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18];
+  const NBLK  = [0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4];
+  const ALIGN = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50]];
+  const EXP = new Array(512), LOG = new Array(256);
+  (function () { let x = 1; for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 256) x ^= 0x11d; } for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255]; })();
+  const gmul = (a, b) => (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]];
+  function rsGen(n) { let g = [1]; for (let i = 0; i < n; i++) { const ng = new Array(g.length + 1).fill(0); for (let j = 0; j < g.length; j++) { ng[j] ^= g[j]; ng[j + 1] ^= gmul(g[j], EXP[i]); } g = ng; } return g; }
+  function rsEnc(data, n) { const g = rsGen(n), r = new Array(n).fill(0); for (const b of data) { const f = b ^ r.shift(); r.push(0); for (let i = 0; i < n; i++) r[i] ^= gmul(g[i + 1], f); } return r; }
+  const bit = (v, i) => ((v >>> i) & 1) === 1;
+  function utf8(s) { return Array.from(new TextEncoder().encode(s)); }
+
+  function build(text) {
+    const bytes = utf8(text);
+    let ver = 0;
+    for (let v = 1; v <= 10; v++) { const dc = TOTAL[v] - ECLEN[v] * NBLK[v]; const hdr = 4 + (v < 10 ? 8 : 16); if (hdr + bytes.length * 8 <= dc * 8) { ver = v; break; } }
+    if (!ver) throw new Error('Texto longo demais para o QR');
+    const dataCw = TOTAL[ver] - ECLEN[ver] * NBLK[ver];
+    const bits = [];
+    const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+    push(4, 4); push(bytes.length, ver < 10 ? 8 : 16); bytes.forEach(b => push(b, 8));
+    for (let i = 0; i < 4 && bits.length < dataCw * 8; i++) bits.push(0);
+    while (bits.length % 8) bits.push(0);
+    const data = []; for (let i = 0; i < bits.length; i += 8) { let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; data.push(b); }
+    for (let p = 0xEC; data.length < dataCw; p ^= 0xEC ^ 0x11) data.push(p);
+    // blocos + correção de erro
+    const nb = NBLK[ver], ecl = ECLEN[ver], raw = TOTAL[ver];
+    const nShort = nb - raw % nb, shortLen = Math.floor(raw / nb);
+    const blocks = []; let k = 0;
+    for (let i = 0; i < nb; i++) {
+      const dat = data.slice(k, k + shortLen - ecl + (i < nShort ? 0 : 1)); k += dat.length;
+      const ecc = rsEnc(dat, ecl); if (i < nShort) dat.push(0); blocks.push(dat.concat(ecc));
+    }
+    const all = [];
+    for (let i = 0; i < blocks[0].length; i++) for (let j = 0; j < nb; j++) if (i !== shortLen - ecl || j >= nShort) all.push(blocks[j][i]);
+    // matriz
+    const size = ver * 4 + 17;
+    const mod = Array.from({ length: size }, () => new Array(size).fill(false));
+    const fn = Array.from({ length: size }, () => new Array(size).fill(false));
+    const setF = (x, y, d) => { mod[y][x] = d; fn[y][x] = true; };
+    for (let i = 0; i < size; i++) { setF(6, i, i % 2 === 0); setF(i, 6, i % 2 === 0); }
+    const finder = (cx, cy) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy; if (x >= 0 && x < size && y >= 0 && y < size) setF(x, y, d !== 2 && d !== 4); } };
+    finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+    const ap = ALIGN[ver];
+    for (let a = 0; a < ap.length; a++) for (let b = 0; b < ap.length; b++) {
+      if ((a === 0 && b === 0) || (a === 0 && b === ap.length - 1) || (a === ap.length - 1 && b === 0)) continue;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setF(ap[a] + dx, ap[b] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }
+    const drawFormat = (mask) => {
+      const d = (1 << 3) | mask; let r = d; for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+      const b = ((d << 10) | r) ^ 0x5412;
+      for (let i = 0; i <= 5; i++) setF(8, i, bit(b, i)); setF(8, 7, bit(b, 6)); setF(8, 8, bit(b, 7)); setF(7, 8, bit(b, 8));
+      for (let i = 9; i < 15; i++) setF(14 - i, 8, bit(b, i));
+      for (let i = 0; i < 8; i++) setF(size - 1 - i, 8, bit(b, i));
+      for (let i = 8; i < 15; i++) setF(8, size - 15 + i, bit(b, i));
+      setF(8, size - 8, true);
+    };
+    drawFormat(0);
+    if (ver >= 7) { let r = ver; for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25); const b = (ver << 12) | r; for (let i = 0; i < 18; i++) { const v = bit(b, i), a = size - 11 + i % 3, c = Math.floor(i / 3); setF(a, c, v); setF(c, a, v); } }
+    // dados em zigue-zague
+    let n = 0;
+    for (let right = size - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+        const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - vert : vert;
+        if (!fn[y][x] && n < all.length * 8) { mod[y][x] = bit(all[n >>> 3], 7 - (n & 7)); n++; }
+      }
+    }
+    const applyMask = (m) => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      let inv; switch (m) { case 0: inv = (x + y) % 2 === 0; break; case 1: inv = y % 2 === 0; break; case 2: inv = x % 3 === 0; break; case 3: inv = (x + y) % 3 === 0; break;
+        case 4: inv = (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; break; case 5: inv = x * y % 2 + x * y % 3 === 0; break; case 6: inv = (x * y % 2 + x * y % 3) % 2 === 0; break; default: inv = ((x + y) % 2 + x * y % 3) % 2 === 0; }
+      if (!fn[y][x] && inv) mod[y][x] = !mod[y][x]; } };
+    const penalty = () => {
+      let p = 0;
+      for (let t = 0; t < 2; t++) for (let a = 0; a < size; a++) { let run = 1; for (let b = 1; b < size; b++) { const c = t ? mod[b][a] : mod[a][b], pr = t ? mod[b - 1][a] : mod[a][b - 1]; if (c === pr) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+      for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) { const c = mod[y][x]; if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) p += 3; }
+      const pat = [1, 0, 1, 1, 1, 0, 1];
+      for (let t = 0; t < 2; t++) for (let a = 0; a < size; a++) for (let b = 0; b <= size - 7; b++) { let ok = true; for (let i = 0; i < 7; i++) { const c = t ? mod[b + i][a] : mod[a][b + i]; if ((c ? 1 : 0) !== pat[i]) { ok = false; break; } } if (ok) p += 40; }
+      let dark = 0; for (const r of mod) for (const c of r) if (c) dark++;
+      p += Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+      return p;
+    };
+    let best = 0, bestP = Infinity;
+    for (let m = 0; m < 8; m++) { applyMask(m); drawFormat(m); const p = penalty(); if (p < bestP) { bestP = p; best = m; } applyMask(m); }
+    applyMask(best); drawFormat(best);
+    return { size, mod };
+  }
+  function svg(text) {
+    const { size, mod } = build(text), q = 4, d = [];
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (mod[y][x]) d.push('M' + (x + q) + ',' + (y + q) + 'h1v1h-1z');
+    const t = size + q * 2;
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + t + ' ' + t + '" shape-rendering="crispEdges"><rect width="' + t + '" height="' + t + '" fill="#fff"/><path d="' + d.join('') + '" fill="#0B1F3A"/></svg>';
+  }
+  return { svg, build };
+})();
+if (typeof module !== 'undefined') module.exports = QR;
+
+</script>
+
+<script id="motor">
+/* ===================== MOTOR (sem DOM): agrupamento e pontuação ===================== */
+const Motor = (function () {
+  const STOP = new Set(['de','da','do','dos','das','em','na','no','nas','nos','para','com','por','uso','usar','ter','ser','fazer','a','o','e','as','os','um','uma','ao','aos','que','pelo','pela','ou']);
+  // Sinônimos/abreviações do domínio (edite à vontade): [expressão regular, substituto]
+  const ALIAS = [
+    [/\bia\b/g, 'inteligencia artificial'], [/\bai\b/g, 'inteligencia artificial'],
+    [/\bml\b/g, 'aprendizado maquina'], [/\bmachine learning\b/g, 'aprendizado maquina'],
+    [/\baprendizado de maquina\b/g, 'aprendizado maquina'], [/\bdeep learning\b/g, 'aprendizado profundo'],
+    [/\bbio informatica\b/g, 'bioinformatica'], [/\btele saude\b/g, 'telessaude'], [/\btele medicina\b/g, 'telemedicina'],
+    [/\blaboratorial\b/g, 'laboratorio'], [/\blab\b/g, 'laboratorio'], [/\bcurador(?:ia)?\b/g, 'curadoria'],
+    [/\bbig data\b/g, 'grandes dados'], [/\btelessaude\b/g, 'telemedicina'], [/\bdata science\b/g, 'ciencia dados'],
+    [/\bcienci[ao] de dados\b/g, 'ciencia dados'], [/\blgpd\b/g, 'protecao dados'], [/\bprivacidade de dados\b/g, 'protecao dados'],
+    [/\bseguranca de dados\b/g, 'protecao dados']
+  ];
+  function stem(w) {
+    if (w.length > 4 && w.endsWith('oes')) return w.slice(0, -3) + 'ao';
+    if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);
+    return w;
+  }
+  function chave(s) {
+    let t = String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\b([a-z])\.(?=[a-z]\.?)/g, '$1').replace(/[^a-z0-9]+/g, ' ').trim();
+    for (const [re, rep] of ALIAS) t = t.replace(re, rep);
+    let toks = t.split(' ').filter(Boolean);
+    const sem = toks.filter(w => !STOP.has(w));
+    if (sem.length) toks = sem;
+    return toks.map(stem).sort().join(' ');
+  }
+  function lev(a, b) {
+    if (a === b) return 0;
+    const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+    let prev = Array.from({ length: n + 1 }, (_, i) => i);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return prev[n];
+  }
+  // Para frases: compara palavras pelo radical (6 primeiras letras), tolerando flexões (automatizar/automacao)
+  const rad = w => w.length > 6 ? w.slice(0, 6) : w;
+  function sim(ka, kb) {
+    if (ka === kb) return 1;
+    if (!ka || !kb) return 0;
+    const ratio = 1 - lev(ka, kb) / Math.max(ka.length, kb.length);
+    const A = new Set(ka.split(' ').map(rad)), B = new Set(kb.split(' ').map(rad));
+    let inter = 0; A.forEach(t => { if (B.has(t)) inter++; });
+    const uni = A.size + B.size - inter;
+    const tok = inter ? ((inter / Math.min(A.size, B.size)) + (inter / uni)) / 2 : 0;
+    // frases (3+ palavras): exige menos coincidência exata, pois a redação varia muito
+    const frase = Math.max(A.size, B.size) >= 3;
+    return Math.max(ratio, frase ? Math.min(1, tok * 1.15) : tok);
+  }
+  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  function rotulo(itens) {
+    const cont = new Map();
+    itens.forEach(r => { const k = r.resposta.trim().toLowerCase(); const o = cont.get(k) || { n: 0, txt: r.resposta.trim() }; o.n++; cont.set(k, o); });
+    let melhor = null; cont.forEach(o => { if (!melhor || o.n > melhor.n) melhor = o; });
+    return cap(melhor.txt);
+  }
+  // rows: linhas completas (com cluster_manual e invalida). Devolve cópias com cluster/freq/pontos recalculados.
+  function processar(rows, limiar) {
+    const grupos = new Map();
+    rows.forEach(r => { const k = r.secao_id + '|' + r.pergunta_idx; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(r); });
+    const out = [];
+    grupos.forEach(lista => {
+      const clusters = [];
+      const validos = lista.filter(r => !r.invalida);
+      const manuais = validos.filter(r => r.cluster_manual);
+      const autos = validos.filter(r => !r.cluster_manual).map(r => ({ r, k: chave(r.resposta) }))
+        .sort((x, y) => x.k < y.k ? -1 : x.k > y.k ? 1 : (x.r.id < y.r.id ? -1 : 1));
+      manuais.forEach(r => {
+        if (r.cluster_manual.startsWith('__solo__')) { clusters.push({ gid: r.cluster_manual, sk: null, itens: [r], fixo: r.resposta.trim() ? cap(r.resposta.trim()) : '' }); return; }
+        const gid = 'm:' + chave(r.cluster_manual);
+        let c = clusters.find(x => x.gid === gid);
+        if (!c) { c = { gid, sk: chave(r.cluster_manual), itens: [], fixo: r.cluster_manual.trim() }; clusters.push(c); }
+        c.itens.push(r);
+      });
+      autos.forEach(({ r, k }) => {
+        let melhor = null, ms = -1;
+        clusters.forEach(c => { if (c.sk == null) return; const s = sim(k, c.sk); if (s >= limiar && s > ms) { ms = s; melhor = c; } });
+        if (melhor) melhor.itens.push(r); else clusters.push({ gid: 'a:' + k + ':' + r.id, sk: k, itens: [r], fixo: null });
+      });
+      clusters.forEach(c => {
+        const label = c.fixo || rotulo(c.itens), freq = c.itens.length, pontos = freq === 1 ? 10 : 5;
+        c.itens.forEach(r => out.push(Object.assign({}, r, { cluster: label, freq, pontos })));
+      });
+      lista.filter(r => r.invalida).forEach(r => out.push(Object.assign({}, r, { cluster: null, freq: 0, pontos: 0 })));
+    });
+    return out;
+  }
+  function ranking(proc) {
+    const m = new Map();
+    proc.forEach(r => {
+      if (r.pontos == null) return;
+      let o = m.get(r.nickname); if (!o) { o = { nickname: r.nickname, profissao: r.profissao, pts: 0, unicas: 0, consensos: 0 }; m.set(r.nickname, o); }
+      o.pts += r.pontos; if (r.pontos === 10) o.unicas++; else if (r.pontos === 5) o.consensos++;
+    });
+    const arr = Array.from(m.values()).sort((a, b) => b.pts - a.pts || a.nickname.localeCompare(b.nickname, 'pt-BR'));
+    let pos = 0, prev = null; arr.forEach((o, i) => { if (o.pts !== prev) { pos = i + 1; prev = o.pts; } o.pos = pos; });
+    return arr;
+  }
+  function clustersDe(proc, secaoId, idx) {
+    const m = new Map();
+    proc.forEach(r => {
+      if (r.secao_id !== secaoId || r.pergunta_idx !== idx || r.invalida || r.cluster == null) return;
+      let c = m.get(r.cluster); if (!c) { c = { label: r.cluster, freq: r.freq, pontos: r.pontos, nicks: [] }; m.set(r.cluster, c); }
+      c.nicks.push(r.nickname);
+    });
+    return Array.from(m.values()).sort((a, b) => b.freq - a.freq || a.label.localeCompare(b.label, 'pt-BR'));
+  }
+  function csvCelula(v) {
+    let s = String(v == null ? '' : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;           // evita injeção de fórmula no Excel
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function gerarCSV(proc) {
+    const cab = ['Secao', 'Pergunta', 'Participante', 'Profissao', 'Resposta_original', 'Grupo', 'Frequencia', 'Pontos', 'Classificacao', 'Anulada', 'Ajuste_manual'];
+    const linhas = [cab.map(csvCelula).join(';')];
+    proc.filter(r => r.pontos != null).forEach(r => {
+      const cls = r.invalida ? 'Anulada' : r.pontos === 10 ? 'Ideia unica' : 'Consenso';
+      const aj = r.cluster_manual ? (r.cluster_manual.startsWith('__solo__') ? 'separada' : 'unida') : '';
+      linhas.push([r.secao_titulo, r.pergunta, r.nickname, r.profissao, r.resposta, r.cluster || '', r.freq, r.pontos, cls, r.invalida ? 'sim' : 'nao', aj].map(csvCelula).join(';'));
+    });
+    return '﻿' + linhas.join('\r\n');
+  }
+  return { chave, sim, processar, ranking, clustersDe, gerarCSV };
+})();
+window.Motor = Motor;
+</script>
+
+<script id="app">
+/* ===================== APP ===================== */
+const CFG = { URL: 'https://sywjsyuzvklmgmymeivm.supabase.co', KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5d2pzeXV6dmtsbWdteW1laXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxMDY3NzIsImV4cCI6MjEwNzY4Mjc3Mn0.k1vMIJXW4N6eg925JKbYrKFbGHg-fkcLHochNpJzcwY' };
+const POLL_MS = window.BIO_POLL_MS || 3000;
+const MED_POLL_MS = window.BIO_MED_POLL_MS || 2000;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const mem = {};
+const LS = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return mem[k] == null ? null : mem[k]; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { mem[k] = v; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { delete mem[k]; } }
+};
+const SS = {
+  get(k) { try { return sessionStorage.getItem(k); } catch (e) { return mem['s_' + k] == null ? null : mem['s_' + k]; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { mem['s_' + k] = v; } },
+  del(k) { try { sessionStorage.removeItem(k); } catch (e) { delete mem['s_' + k]; } }
+};
+function fmtTempo(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+let toastT = null;
+function toast(msg, ms) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms || 3500); }
+function setConn(ok, msg) { const c = $('conn'); c.className = 'conn ' + (ok ? 'ok' : 'err'); c.textContent = ok ? '● conectado' : (msg || '● sem conexão'); }
+
+async function rpc(fn, args) {
+  const r = await fetch(CFG.URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args || {})
+  });
+  const t = await r.text(); let d = null;
+  try { d = t ? JSON.parse(t) : null; } catch (e) { d = t; }
+  if (!r.ok) { const err = new Error((d && (d.message || d.error)) || ('HTTP ' + r.status)); err.status = r.status; throw err; }
+  return d;
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let MODO = 'part';
+function definirModo() {
+  MODO = (location.hash === '#mediador' || /[?&]mediador/.test(location.search)) ? 'med' : 'part';
+  $('view-part').hidden = MODO !== 'part'; $('view-med').hidden = MODO !== 'med';
+  $('rodape').hidden = MODO === 'med';
+}
+
+/* ===================== PARTICIPANTE ===================== */
+const P = { ident: null, estado: null, offset: 0, res: null, versaoRes: -1, jogoChave: null, enviando: false, buscandoRes: false, token: null };
+function lerIdent() { try { const o = JSON.parse(LS.get('bio_ident') || 'null'); return o && o.nick && o.token ? o : null; } catch (e) { return null; } }
+function novoToken() { try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) { } return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12); }
+const TELAS = ['s-conectando', 's-login', 's-lobby', 's-jogo', 's-enviado', 's-resultado'];
+function mostrar(id) { TELAS.forEach(t => { $(t).hidden = t !== id; }); }
+const agoraSrv = () => Date.now() + P.offset;
+const secaoDe = e => (e && e.agenda || []).find(s => s.id === e.secao_id) || null;
+const chaveRodada = e => e.secao_id + ':' + e.rodada;
+
+async function entrar() {
+  const nick = $('in-nick').value.trim(), prof = $('in-prof').value.trim(), fb = $('fb-login'), btn = $('btn-entrar');
+  fb.textContent = '';
+  if (nick.length < 2) { fb.textContent = 'Use pelo menos 2 caracteres.'; return; }
+  if (!P.token) P.token = novoToken();
+  btn.disabled = true;
+  try {
+    const r = await rpc('bio_entrar', { p_nick: nick, p_prof: prof, p_token: P.token });
+    if (r.ok) {
+      P.ident = { nick: r.nickname, prof: prof || 'Geral', token: P.token };
+      LS.set('bio_ident', JSON.stringify(P.ident));
+      await tickPart();
+    } else {
+      fb.textContent = { em_uso: 'Esse apelido já está em uso (maiúsculas e acentos contam como iguais). Escolha outro.', tamanho: 'Use de 2 a 30 caracteres.', sala_cheia: 'A sala está cheia.', token: 'Erro de identificação. Recarregue a página.' }[r.erro] || 'Não foi possível entrar.';
+    }
+  } catch (e) { fb.textContent = 'Sem conexão com o servidor. Tente de novo.'; }
+  btn.disabled = false;
+}
+function sairParticipante(msg) {
+  LS.del('bio_ident'); P.ident = null; P.token = null; P.res = null; P.versaoRes = -1;
+  const a = $('aviso-part'); if (msg) { a.textContent = msg; a.hidden = false; } else a.hidden = true;
+  renderPart();
+}
+async function tickPart() {
+  try {
+    const e = await rpc('bio_estado', { p_nick: P.ident ? P.ident.nick : null, p_token: P.ident ? P.ident.token : null });
+    P.offset = e.agora_ms - Date.now(); P.estado = e; setConn(true);
+    if (P.ident && e.eu_ok === false) { sairParticipante('A sala foi reiniciada. Entre de novo com seu apelido.'); return; }
+    if (P.ident && (e.status === 'RESULTADOS' || e.status === 'FIM') && P.versaoRes !== e.versao && !P.buscandoRes) buscarMeuResultado(e.versao);
+  } catch (err) { setConn(false); }
+  renderPart();
+}
+async function buscarMeuResultado(versao) {
+  P.buscandoRes = true;
+  try {
+    await sleep(Math.random() * 1200);        // espalha as consultas dos celulares
+    const r = await rpc('bio_meu_resultado', { p_nick: P.ident.nick, p_token: P.ident.token });
+    if (r.ok) { P.res = r; P.versaoRes = versao; } else if (r.erro === 'identidade') sairParticipante('Entre de novo com seu apelido.');
+  } catch (e) { }
+  P.buscandoRes = false; renderPart();
+}
+function renderPart() {
+  if (MODO !== 'part') return;
+  if (!P.ident) { mostrar('s-login'); return; }
+  const e = P.estado; if (!e) { mostrar('s-conectando'); return; }
+  $('topo-titulo').textContent = (e.titulo && e.titulo !== 'BioInova STOP!') ? e.titulo : '';
+  if (e.status === 'LOBBY') {
+    $('lobby-nome').textContent = 'Olá, ' + P.ident.nick + '!'; $('lobby-prof').textContent = 'Você representa: ' + P.ident.prof;
+    $('lobby-n').textContent = e.n_participantes; mostrar('s-lobby');
+  } else if (e.status === 'ABERTA') {
+    const sec = secaoDe(e); if (!sec) { mostrar('s-lobby'); return; }
+    const chave = chaveRodada(e), st = LS.get('bio_env_' + chave);
+    if (st) { renderEnviado(e, st); mostrar('s-enviado'); }
+    else { montarJogo(sec, chave); renderJogoMeta(e, sec); mostrar('s-jogo'); }
+  } else { renderResultado(e); mostrar('s-resultado'); }
+}
+function montarJogo(sec, chave) {
+  if (P.jogoChave === chave) return;
+  P.jogoChave = chave;
+  let rasc = []; try { rasc = JSON.parse(LS.get('bio_rasc_' + chave) || '[]'); } catch (e) { }
+  const box = $('jogo-campos'); box.textContent = '';
+  $('jogo-titulo').textContent = sec.titulo;
+  $('jogo-sec').textContent = 'Tema central';
+  $('fb-envio').textContent = '';
+  sec.perguntas.forEach((q, i) => {
+    const w = document.createElement('div'); w.className = 'campo';
+    const lb = document.createElement('label'); lb.htmlFor = 'resp-' + i; lb.textContent = (i + 1) + '. ' + q;
+    const inp = document.createElement('input'); inp.type = 'text'; inp.id = 'resp-' + i; inp.maxLength = 120; inp.autocomplete = 'off';
+    inp.placeholder = 'palavra ou frase curta'; inp.value = rasc[i] || ''; inp.enterKeyHint = i < sec.perguntas.length - 1 ? 'next' : 'done';
+    inp.addEventListener('input', () => { salvarRascunho(chave, sec); atualizarContagem(sec); });
+    w.appendChild(lb); w.appendChild(inp); box.appendChild(w);
+  });
+  atualizarContagem(sec);
+}
+function valoresJogo(sec) { return sec.perguntas.map((_, i) => { const el = $('resp-' + i); return el ? el.value.trim() : ''; }); }
+function salvarRascunho(chave, sec) { LS.set('bio_rasc_' + chave, JSON.stringify(valoresJogo(sec))); }
+function atualizarContagem(sec) {
+  const n = valoresJogo(sec).filter(v => v.length >= 2).length;
+  $('jogo-cont').textContent = n + ' de ' + sec.perguntas.length + ' campos preenchidos';
+  $('jogo-prog').style.width = (100 * n / sec.perguntas.length) + '%';
+}
+function renderJogoMeta(e, sec) {
+  const b = $('stop-mobile');
+  if (e.stop_autor) { b.hidden = false; b.textContent = '🚨 ' + e.stop_autor + ' gritou STOP! Termine e envie agora.'; } else b.hidden = true;
+}
+function renderEnviado(e, st) {
+  const sec = secaoDe(e);
+  $('env-titulo').textContent = st === 'ok' ? 'Respostas enviadas!' : st === 'tempo' ? 'O tempo acabou' : 'Rodada encerrada para você';
+  const b = $('stop-env'); if (e.stop_autor) { b.hidden = false; b.textContent = '🚨 STOP de ' + e.stop_autor; } else b.hidden = true;
+  $('env-info').textContent = e.n_cartelas + ' de ' + e.n_participantes + ' já enviaram. Aguarde: os resultados aparecem no telão e aqui.';
+  $('t-env').hidden = false;
+}
+async function enviar(auto) {
+  const e = P.estado; if (!e || e.status !== 'ABERTA' || P.enviando) return;
+  const sec = secaoDe(e); if (!sec) return;
+  const chave = chaveRodada(e), itens = valoresJogo(sec), n = itens.filter(v => v.length >= 2).length;
+  if (!n) { if (auto) { LS.set('bio_env_' + chave, 'vazio'); renderPart(); } else $('fb-envio').textContent = 'Preencha pelo menos um campo.'; return; }
+  P.enviando = true; $('btn-enviar').disabled = true; $('fb-envio').textContent = '';
+  try {
+    const r = await rpc('bio_enviar', { p_nick: P.ident.nick, p_token: P.ident.token, p_itens: itens });
+    if (r.ok) LS.set('bio_env_' + chave, 'ok');
+    else if (r.erro === 'tempo' || r.erro === 'fechada') LS.set('bio_env_' + chave, 'tempo');
+    else if (r.erro === 'identidade') { sairParticipante('Entre de novo com seu apelido.'); P.enviando = false; return; }
+    else $('fb-envio').textContent = 'Não foi possível enviar (' + r.erro + ').';
+  } catch (err) { $('fb-envio').textContent = 'Sem conexão. Vamos tentar de novo…'; }
+  P.enviando = false; $('btn-enviar').disabled = false; tickPart();
+}
+function renderResultado(e) {
+  const card = $('s-resultado'), res = P.res, fim = e.status === 'FIM';
+  const sec = secaoDe(e), chave = e.secao_id ? chaveRodada(e) : '';
+  let h = '';
+  if (fim) h += '<h2>🏁 Fim da oficina</h2>'; else h += '<h2>Resultado da rodada</h2>';
+  if (!res || P.versaoRes !== e.versao && !(res && res.ok)) { card.innerHTML = h + '<div class="centro"><div class="pulso"></div><p>Calculando resultados…</p></div>'; return; }
+  if (!fim && sec) {
+    h += '<div class="dica">' + esc(sec.titulo) + '</div>';
+    const minhas = res.minhas.filter(r => r.secao_id === e.secao_id);
+    let ptsSec = 0;
+    if (!minhas.length) {
+      const st = LS.get('bio_env_' + chave);
+      h += st === 'ok' ? '<p>Calculando seus pontos…</p>' : '<p>Você não enviou respostas nesta rodada.</p>';
+    }
+    sec.perguntas.forEach((q, i) => {
+      const r = minhas.find(x => x.pergunta_idx === i);
+      h += '<div class="res-linha"><small>' + esc((i + 1) + '. ' + q) + '</small>';
+      if (!r) h += '<div>—</div>';
+      else {
+        ptsSec += r.pontos || 0;
+        const tag = r.invalida ? '<span class="tag zero">Anulada · 0 pts</span>' : r.pontos === 10 ? '<span class="tag unica">Ideia única · +10</span>' : '<span class="tag consenso">Consenso com ' + (r.freq - 1) + ' pessoa(s) · +5</span>';
+        h += '<div><b>' + esc(r.resposta) + '</b></div>' + tag;
+      }
+      h += '</div>';
+    });
+    h += '<div class="centro" style="margin:14px 0 4px"><div class="dica">Pontos nesta rodada</div><div class="pts-grande">' + ptsSec + '</div></div>';
+  }
+  h += '<div class="centro"><div class="dica">Total acumulado</div><div class="pts-grande">' + (res.pts || 0) + '</div>';
+  if (res.pos) h += '<div class="dica">Você está em ' + res.pos + 'º de ' + res.total + '</div>';
+  h += '</div><h3 style="margin-bottom:4px">Ranking</h3>';
+  const eu = P.ident.nick.toLowerCase();
+  (res.ranking || []).slice(0, fim ? 10 : 5).forEach(o => {
+    h += '<div class="rank-item' + (o.nickname.toLowerCase() === eu ? ' eu' : '') + '"><span class="pos">' + o.pos + 'º</span><span class="nm">' + esc(o.nickname) + '</span><b>' + o.pontos + '</b></div>';
+  });
+  if (fim) h += '<p class="centro dica" style="margin-top:14px">Obrigado por participar! 🧬</p>';
+  card.innerHTML = h;
+}
+function iniciarPart() {
+  P.ident = lerIdent();
+  $('btn-entrar').addEventListener('click', entrar);
+  $('in-nick').addEventListener('keydown', ev => { if (ev.key === 'Enter') $('in-prof').focus(); });
+  $('in-prof').addEventListener('keydown', ev => { if (ev.key === 'Enter') entrar(); });
+  $('btn-enviar').addEventListener('click', () => enviar(false));
+  $('btn-trocar').addEventListener('click', () => sairParticipante(''));
+  renderPart();
+  (function laco() { tickPart().finally(() => setTimeout(laco, POLL_MS + Math.random() * 600)); })();
+  setInterval(() => {
+    const e = P.estado; if (!e || e.status !== 'ABERTA' || !P.ident) return;
+    const resta = e.fim_em_ms - agoraSrv(), txt = fmtTempo(resta);
+    ['t-jogo', 't-env'].forEach(id => { const t = $(id); t.textContent = txt; t.classList.toggle('baixo', resta < 15000); });
+    if (resta <= 0 && !LS.get('bio_env_' + chaveRodada(e)) && secaoDe(e)) enviar(true);
+  }, 250);
+}
+
+/* ===================== MEDIADOR ===================== */
+const PRESETS = {
+  rapido: [
+    { titulo: 'Profissões em transformação: daqui a 5 anos', tempo_seg: 210, debate_seg: 150, stop_seg: 20, perguntas: ['Competências que ganharão importância', 'Tarefas que poderão ser automatizadas', 'Novas atividades profissionais', 'Conhecimentos digitais necessários', 'Competências humanas fundamentais'] },
+    { titulo: 'Do problema à solução', tempo_seg: 150, debate_seg: 120, stop_seg: 20, perguntas: ['Maior gargalo ou dor hoje nessa área', 'Tecnologia ou ideia que poderia resolver', 'Maior barreira para implementar'] }
+  ],
+  completo: [
+    { titulo: 'Profissões em transformação: daqui a 5 anos', tempo_seg: 240, debate_seg: 150, stop_seg: 20, perguntas: ['Competências que ganharão importância', 'Tarefas que poderão ser automatizadas', 'Novas atividades profissionais', 'Conhecimentos digitais necessários', 'Competências humanas fundamentais'] },
+    { titulo: 'Mapeando o problema', tempo_seg: 180, debate_seg: 120, stop_seg: 20, perguntas: ['Principal gargalo técnico ou operacional', 'Maior dificuldade do paciente ou usuário', 'Processo mais lento, manual ou sujeito a erro', 'O que mais gera retrabalho ou desperdício'] },
+    { titulo: 'Ideando a solução', tempo_seg: 180, debate_seg: 120, stop_seg: 20, perguntas: ['Tecnologia ou ferramenta-chave', 'Como a IA ou a automação atua', 'Produto, serviço ou protocolo inovador', 'Maior barreira prática ou ética'] }
+  ],
+  vazio: [{ titulo: 'Nova seção', tempo_seg: 180, debate_seg: 120, stop_seg: 20, perguntas: ['Primeira pergunta'] }]
+};
+function novoId(i) { return 's' + Date.now().toString(36) + (i == null ? '' : i) + Math.random().toString(36).slice(2, 5); }
+function presetAgenda(nome) { return PRESETS[nome].map((s, i) => Object.assign({ id: novoId(i) }, JSON.parse(JSON.stringify(s)))); }
+function planoMin(agenda, totalMin) {
+  const base = 180 + 120;       // 3 min de entrada + 2 min de encerramento
+  const sec = (agenda || []).reduce((a, s) => a + (s.tempo_seg || 180) + (s.debate_seg == null ? 120 : s.debate_seg), 0);
+  const usado = (base + sec) / 60;
+  return { usado, total: totalMin, folga: totalMin - usado };
+}
+function htmlPlano(p) {
+  const pct = Math.min(100, 100 * p.usado / p.total);
+  return '<b>⏱ ≈ ' + Math.round(p.usado) + ' min de ' + p.total + ' min</b> ' + (p.folga >= 0 ? '(sobram ' + Math.round(p.folga) + ' min)' : '<span style="color:#ff8f86">(estoura em ' + Math.round(-p.folga) + ' min!)</span>') + '<div class="barra"><i style="width:' + pct + '%"></i></div><small style="color:var(--n3)">Inclui 3 min de entrada, tempo de cada rodada, debate e 2 min de encerramento.</small>';
+}
+
+const M = { senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.75, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
+
+async function medEntrar(pwd, silencioso) {
+  const er = $('med-erro'); er.textContent = '';
+  try {
+    const r = await rpc('bio_admin_login', { p_senha: pwd });
+    if (!r.ok) { if (!silencioso) er.textContent = 'Senha incorreta.'; SS.del('bio_med'); return false; }
+    M.senha = pwd; SS.set('bio_med', pwd);
+    $('med-login').hidden = true; $('med-app').hidden = false;
+    $('aviso-senha').hidden = !r.padrao;
+    iniciarLacoMed();
+    return true;
+  } catch (e) { if (!silencioso) er.textContent = 'Sem conexão com o servidor.'; return false; }
+}
+async function adm(fn, args) {
+  try { return await rpc(fn, Object.assign({ p_senha: M.senha }, args || {})); }
+  catch (e) {
+    const m = { rodada_aberta: 'Encerre a rodada antes de editar o roteiro.', senha_invalida: 'Senha inválida.', agenda_invalida: 'Roteiro inválido: confira títulos, perguntas e tempos.', senha_curta: 'A senha precisa de pelo menos 6 caracteres.', secao_inexistente: 'Seção não encontrada.' }[e.message];
+    toast(m || ('Erro: ' + e.message)); throw e;
+  }
+}
+function iniciarLacoMed() {
+  if (M.loop) return; M.loop = true;
+  (async function laco() { try { await tickMed(); } catch (e) { } setTimeout(laco, MED_POLL_MS); })();
+  setInterval(tickTimersMed, 250);
+}
+async function tickMed() {
+  let e;
+  try { e = await rpc('bio_estado', {}); setConn(true); } catch (err) { setConn(false); return; }
+  M.offset = e.agora_ms - Date.now(); M.estado = e;
+  if (e.status !== M.ultStatus) { M.palco = null; M.ultStatus = e.status; M.sigs = {}; }
+  if (!e.agenda.length && !M.seeded && e.status !== 'ABERTA') {
+    M.seeded = true;
+    try { await adm('bio_admin_salvar_agenda', { p_titulo: e.titulo, p_agenda: presetAgenda('rapido') }); toast('Roteiro rápido carregado. Edite se quiser.'); return; } catch (x) { }
+  }
+  if (e.versao !== M.versaoRows) { M.versaoRows = e.versao; await recarregarRows(false); }
+  // encerra sozinho
+  if (e.status === 'ABERTA' && $('chk-auto').checked && !M.fechando) {
+    const resta = e.fim_em_ms - (Date.now() + M.offset);
+    const todos = e.n_participantes > 0 && e.n_cartelas >= e.n_participantes;
+    if (resta < -1200 || todos) { M.fechando = true; try { await adm('bio_admin_encerrar'); await tickMed(); } catch (x) { } M.fechando = false; return; }
+  }
+  renderMed();
+}
+async function recarregarRows(render) {
+  try {
+    M.rows = await adm('bio_admin_respostas');
+    await processarEGravar();
+    if (render !== false) renderMed();
+  } catch (e) { }
+}
+async function processarEGravar() {
+  if (M.processando) return; M.processando = true;
+  try {
+    const e = M.estado, aberta = e && e.status === 'ABERTA' ? e.secao_id : null;
+    const base = M.rows.filter(r => r.secao_id !== aberta);
+    const calc = Motor.processar(base, M.limiar);
+    const orig = new Map(base.map(r => [r.id, r]));
+    const diff = calc.filter(c => { const o = orig.get(c.id); return o.pontos !== c.pontos || o.freq !== c.freq || (o.cluster || null) !== (c.cluster || null); })
+      .map(c => ({ id: c.id, cluster: c.cluster, freq: c.freq, pontos: c.pontos }));
+    if (diff.length) { await adm('bio_admin_gravar', { p_itens: diff }); }
+    M.proc = calc; M.sigs.res = null;
+  } finally { M.processando = false; }
+}
+const secoesConhecidas = () => {
+  const ag = (M.estado && M.estado.agenda) || [], v = new Map();
+  ag.forEach(s => v.set(s.id, { id: s.id, titulo: s.titulo, perguntas: s.perguntas }));
+  M.rows.forEach(r => { if (!v.has(r.secao_id)) v.set(r.secao_id, { id: r.secao_id, titulo: r.secao_titulo, perguntas: [] }); const s = v.get(r.secao_id); if (!s.perguntas[r.pergunta_idx]) s.perguntas[r.pergunta_idx] = r.pergunta; });
+  return Array.from(v.values());
+};
+function temResultados() { return M.proc.some(r => r.pontos != null); }
+
+function renderMed() {
+  const e = M.estado; if (!e) return;
+  $('topo-titulo').textContent = (e.titulo && e.titulo !== 'BioInova STOP!') ? e.titulo : '';
+  $('c-part').textContent = e.n_participantes + ' na sala';
+  $('c-env').textContent = e.n_cartelas + ' enviaram';
+  renderControles(e); renderPalco(e);
+}
+function contarPorSecao() { const m = {}; M.rows.forEach(r => { (m[r.secao_id] = m[r.secao_id] || new Set()).add(r.nickname); }); return m; }
+function renderControles(e) {
+  const cont = contarPorSecao();
+  const sig = JSON.stringify([e.status, e.secao_id, e.agenda, Object.keys(cont).map(k => k + cont[k].size), M.total]);
+  if (M.sigs.ctl === sig) return; M.sigs.ctl = sig;
+  const p = planoMin(e.agenda, M.total);
+  const pb = $('plano-box'); pb.innerHTML = htmlPlano(p); pb.classList.toggle('estouro', p.folga < 0);
+  const box = $('lista-secoes'); box.textContent = '';
+  if (!e.agenda.length) { box.innerHTML = '<p class="dica" style="color:var(--n3)">Nenhuma seção ainda. Use “Editar roteiro”.</p>'; }
+  e.agenda.forEach((s, i) => {
+    const ativa = e.status === 'ABERTA' && e.secao_id === s.id, n = cont[s.id] ? cont[s.id].size : 0;
+    const d = document.createElement('div'); d.className = 'secao-card' + (ativa ? ' ativa' : n ? ' feita' : '');
+    const b = document.createElement('b'); b.textContent = (i + 1) + '. ' + s.titulo;
+    const sm = document.createElement('small'); sm.textContent = s.perguntas.length + ' perguntas · ' + Math.round((s.tempo_seg || 180) / 60 * 10) / 10 + ' min' + (ativa ? ' · NO AR' : n ? ' · ✓ ' + n + ' participantes' : '');
+    const bt = document.createElement('button'); bt.className = 'btn ' + (ativa ? '' : 'btn-or'); bt.textContent = ativa ? '● Rodada em andamento' : n ? '↻ Refazer esta seção' : '▶ Abrir esta seção';
+    bt.disabled = ativa; bt.dataset.sec = s.id; bt.dataset.n = n;
+    bt.addEventListener('click', () => abrirSecao(s.id, n));
+    d.appendChild(b); d.appendChild(sm); d.appendChild(bt); box.appendChild(d);
+  });
+}
+async function abrirSecao(id, n) {
+  const e = M.estado;
+  if (e.status === 'ABERTA' && !confirm('Há uma rodada aberta. Trocar de seção agora?')) return;
+  if (n > 0 && !confirm('Esta seção já tem respostas. Refazer apaga as respostas dela (os pontos das outras seções continuam). Confirmar?')) return;
+  await adm('bio_admin_abrir', { p_secao_id: id, p_limpar: n > 0 });
+  M.palco = null; await tickMed();
+}
+function renderPalco(e) {
+  let palco = M.palco || ({ LOBBY: 'lobby', ABERTA: 'aberta', RESULTADOS: 'res', FIM: 'fim' })[e.status];
+  if (palco === 'res' && !temResultados() && e.status !== 'RESULTADOS') palco = 'lobby';
+  ['lobby', 'aberta', 'res', 'fim'].forEach(n => { $('palco-' + n).hidden = n !== palco; });
+  $('palco-titulo').textContent = palco === 'lobby' ? 'Entrada' : palco === 'aberta' ? 'Rodada em andamento' : palco === 'fim' ? 'Encerramento' : 'Resultados';
+  if (palco === 'lobby') renderLobby(e); else if (palco === 'aberta') renderAberta(e); else if (palco === 'res') renderRes(e); else renderFim(e);
+}
+function urlApp() { return location.origin + location.pathname.replace(/index\.html$/i, ''); }
+function renderLobby(e) {
+  $('lobby-total').textContent = e.n_participantes;
+  const sig = urlApp(); if (M.sigs.qr !== sig) {
+    M.sigs.qr = sig; $('url-app').textContent = urlApp().replace(/^https?:\/\//, '');
+    try { if (/^https?:/.test(location.protocol)) $('qr-box').innerHTML = QR.svg(urlApp()); else $('qr-box').innerHTML = '<p style="color:#0B1F3A;padding:20px">Publique o site (GitHub Pages ou Netlify) para o QR Code funcionar.</p>'; } catch (x) { $('qr-box').textContent = ''; }
+  }
+  const ch = $('lobby-chips'), sg = JSON.stringify(e.recentes);
+  if (M.sigs.chips !== sg) { M.sigs.chips = sg; ch.textContent = ''; e.recentes.forEach(n => { const s = document.createElement('span'); s.className = 'chip'; s.textContent = n; ch.appendChild(s); }); }
+}
+function renderAberta(e) {
+  const sec = secaoDe(e) || { titulo: '', perguntas: [] };
+  const sig = e.secao_id + ':' + e.rodada;
+  if (M.sigs.ab !== sig) {
+    M.sigs.ab = sig; $('ab-sec').textContent = 'Tema central'; $('ab-titulo').textContent = sec.titulo;
+    const ol = $('ab-perg'); ol.textContent = ''; sec.perguntas.forEach(q => { const li = document.createElement('li'); li.textContent = q; ol.appendChild(li); });
+  }
+  const pct = e.n_participantes ? 100 * e.n_cartelas / e.n_participantes : 0;
+  $('ab-prog').style.width = pct + '%';
+  $('ab-env').textContent = e.n_cartelas + ' de ' + e.n_participantes + ' já enviaram';
+  const st = $('ab-stop'); if (e.stop_autor) { st.hidden = false; st.textContent = '🚨 STOP! ' + e.stop_autor + ' preencheu tudo. Últimos segundos!'; } else st.hidden = true;
+}
+function tickTimersMed() {
+  const e = M.estado; if (!e || e.status !== 'ABERTA') return;
+  const resta = e.fim_em_ms - (Date.now() + M.offset), t = $('ab-timer');
+  t.textContent = fmtTempo(resta); t.classList.toggle('baixo', resta < 15000);
+}
+function renderRes(e) {
+  const secs = secoesConhecidas().filter(s => M.proc.some(r => r.secao_id === s.id));
+  if (e.status === 'RESULTADOS' && secs.some(s => s.id === e.secao_id) && M.ultSecaoAuto !== e.secao_id + ':' + e.rodada) { M.ultSecaoAuto = e.secao_id + ':' + e.rodada; M.secaoVer = e.secao_id; M.pergIdx = 0; M.sigs.res = null; }
+  if (!secs.some(s => s.id === M.secaoVer)) { M.secaoVer = secs.length ? secs[secs.length - 1].id : null; M.pergIdx = 0; }
+  const sig = JSON.stringify([M.secaoVer, M.pergIdx, M.tab, M.filtro, M.proc.length, M.proc.map(r => r.pontos + ':' + r.cluster + ':' + r.invalida).join(',')]);
+  if (M.sigs.res === sig) return; M.sigs.res = sig;
+  const sel = $('sel-secao'); sel.textContent = '';
+  secs.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.titulo; sel.appendChild(o); }); sel.value = M.secaoVer || '';
+  const sc = secs.find(s => s.id === M.secaoVer);
+  const cp = $('chips-perg'); cp.textContent = '';
+  if (sc) sc.perguntas.forEach((q, i) => { const b = document.createElement('button'); b.className = 'chipq' + (i === M.pergIdx ? ' on' : ''); b.textContent = (i + 1) + '. ' + q; b.addEventListener('click', () => { M.pergIdx = i; M.sigs.res = null; renderMed(); }); cp.appendChild(b); });
+  ['nuvem', 'ranking', 'audit', 'sintese'].forEach(t => { $('tab-' + t).hidden = M.tab !== t; });
+  document.querySelectorAll('#res-tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === M.tab));
+  document.querySelectorAll('#filtros-nuvem .btn').forEach(b => b.classList.toggle('on', b.dataset.f === M.filtro));
+  $('res-sel').hidden = M.tab === 'ranking';
+  if (M.tab === 'nuvem') renderNuvem(); else if (M.tab === 'ranking') renderRanking(); else if (M.tab === 'audit') renderAudit(); else renderSintese(sc);
+}
+function renderNuvem() {
+  const cl = Motor.clustersDe(M.proc, M.secaoVer, M.pergIdx), box = $('nuvem'); box.textContent = '';
+  let lista = cl; if (M.filtro === 'consenso') lista = cl.filter(c => c.freq > 1); if (M.filtro === 'unica') lista = cl.filter(c => c.freq === 1);
+  if (!lista.length) { const p = document.createElement('p'); p.className = 'vazio'; p.textContent = 'Nada para mostrar aqui ainda.'; box.appendChild(p); }
+  lista.forEach(c => {
+    const s = document.createElement('span'); s.className = 'palavra ' + (c.freq > 1 ? 'consenso' : 'unica');
+    s.style.fontSize = (c.freq > 1 ? Math.min(24 + c.freq * 8, 76) : 24) + 'px'; s.textContent = c.label;
+    if (c.freq > 1) { const sm = document.createElement('small'); sm.textContent = ' ×' + c.freq; s.appendChild(sm); }
+    s.title = c.nicks.join(', '); box.appendChild(s);
+  });
+  const un = cl.filter(c => c.freq === 1).length, co = cl.filter(c => c.freq > 1).length;
+  $('nuvem-resumo').textContent = co + ' consensos (5 pts) · ' + un + ' ideias únicas (10 pts)';
+}
+function renderRanking() {
+  const r = Motor.ranking(M.proc), box = $('ranking'); box.textContent = '';
+  if (!r.length) { box.innerHTML = '<p class="vazio">Sem pontuação ainda.</p>'; return; }
+  const max = r[0].pts || 1;
+  r.slice(0, 10).forEach(o => {
+    const d = document.createElement('div'); d.className = 'rank-barra';
+    const medalha = o.pos === 1 ? '🥇' : o.pos === 2 ? '🥈' : o.pos === 3 ? '🥉' : o.pos + 'º';
+    const a = document.createElement('div'); a.textContent = medalha;
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = o.nickname; const sm = document.createElement('small'); sm.textContent = o.profissao + ' · ' + o.unicas + ' únicas · ' + o.consensos + ' consensos'; nm.appendChild(sm);
+    const bar = document.createElement('div'); bar.className = 'bar'; const i = document.createElement('i'); i.style.width = (100 * o.pts / max) + '%'; bar.appendChild(i);
+    const pt = document.createElement('b'); pt.textContent = o.pts;
+    d.appendChild(a); d.appendChild(nm); d.appendChild(bar); d.appendChild(pt); box.appendChild(d);
+  });
+}
+function renderAudit() {
+  const tb = $('tbody-audit'); tb.textContent = '';
+  const linhas = M.proc.filter(r => r.secao_id === M.secaoVer && r.pergunta_idx === M.pergIdx)
+    .sort((a, b) => (a.cluster || '￿').localeCompare(b.cluster || '￿', 'pt-BR') || a.nickname.localeCompare(b.nickname, 'pt-BR'));
+  const labels = Array.from(new Set(linhas.filter(r => !r.invalida && r.cluster).map(r => r.cluster)));
+  linhas.forEach(r => {
+    const tr = document.createElement('tr'); if (r.invalida) tr.className = 'anulada';
+    const td = (t) => { const c = document.createElement('td'); c.textContent = t; return c; };
+    tr.appendChild(td(r.nickname)); tr.appendChild(td(r.resposta));
+    const tg = document.createElement('td'); const sl = document.createElement('select'); sl.setAttribute('aria-label', 'Grupo de ' + r.nickname);
+    const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sl.appendChild(o); };
+    add('', '(automático) ' + (r.cluster || '')); labels.forEach(l => add('m:' + l, l)); add('__solo__', '(separar como ideia própria)');
+    sl.value = r.cluster_manual ? (r.cluster_manual.startsWith('__solo__') ? '__solo__' : 'm:' + r.cluster_manual) : '';
+    if (sl.value !== (r.cluster_manual ? (r.cluster_manual.startsWith('__solo__') ? '__solo__' : 'm:' + r.cluster_manual) : '')) sl.value = '';
+    sl.disabled = !!r.invalida; sl.addEventListener('change', () => ajustarGrupo(r.id, sl.value));
+    tg.appendChild(sl); tr.appendChild(tg); tr.appendChild(td(r.freq)); tr.appendChild(td(r.pontos));
+    const ta = document.createElement('td'); const bt = document.createElement('button'); bt.className = 'btn btn-mini'; bt.textContent = r.invalida ? 'Restaurar' : 'Anular'; bt.addEventListener('click', () => alternarAnulada(r.id)); ta.appendChild(bt); tr.appendChild(ta);
+    tb.appendChild(tr);
+  });
+}
+async function ajustarGrupo(id, valor) {
+  const row = M.rows.find(r => r.id === id); if (!row) return;
+  let itens = [];
+  if (valor === '') itens.push({ id, cluster_manual: null, invalida: row.invalida });
+  else if (valor === '__solo__') itens.push({ id, cluster_manual: '__solo__' + id, invalida: row.invalida });
+  else {
+    const label = valor.slice(2);
+    M.proc.filter(r => r.secao_id === row.secao_id && r.pergunta_idx === row.pergunta_idx && !r.invalida && r.cluster === label).forEach(r => itens.push({ id: r.id, cluster_manual: label, invalida: false }));
+    if (!itens.some(i => i.id === id)) itens.push({ id, cluster_manual: label, invalida: false });
+  }
+  try { await adm('bio_admin_ajustar_lote', { p_itens: itens }); await recarregarRows(); } catch (e) { }
+}
+async function alternarAnulada(id) {
+  const row = M.rows.find(r => r.id === id); if (!row) return;
+  try { await adm('bio_admin_ajustar_lote', { p_itens: [{ id, cluster_manual: row.cluster_manual, invalida: !row.invalida }] }); await recarregarRows(); } catch (e) { }
+}
+function renderSintese(sc) {
+  const box = $('sintese'); box.textContent = '';
+  if (!sc) return;
+  sc.perguntas.forEach((q, i) => {
+    const cl = Motor.clustersDe(M.proc, sc.id, i), co = cl.filter(c => c.freq > 1), un = cl.filter(c => c.freq === 1);
+    const d = document.createElement('div'); d.className = 'sint';
+    const h = document.createElement('h4'); h.textContent = (i + 1) + '. ' + q; d.appendChild(h);
+    const t1 = document.createElement('div'); t1.textContent = 'Consensos'; t1.style.fontWeight = '800'; d.appendChild(t1);
+    const ol = document.createElement('ol'); co.slice(0, 3).forEach(c => { const li = document.createElement('li'); li.textContent = c.label + ' (' + c.freq + ')'; ol.appendChild(li); });
+    if (!co.length) { const li = document.createElement('li'); li.textContent = 'nenhum consenso'; ol.appendChild(li); }
+    d.appendChild(ol);
+    const t2 = document.createElement('div'); t2.innerHTML = '<b>' + un.length + ' ideias únicas</b>'; d.appendChild(t2);
+    const ex = document.createElement('div'); ex.className = 'dica'; ex.style.color = 'var(--n3)'; ex.textContent = un.slice(0, 5).map(c => c.label).join(' · '); d.appendChild(ex);
+    box.appendChild(d);
+  });
+}
+function renderFim(e) {
+  const r = Motor.ranking(M.proc), pod = $('podio'); pod.textContent = '';
+  [[1, 'p2'], [0, 'p1'], [2, 'p3']].forEach(([i, cls]) => {
+    const o = r[i]; if (!o) return;
+    const d = document.createElement('div'); d.className = cls;
+    d.innerHTML = '<div class="med">' + ['🥇', '🥈', '🥉'][i] + '</div>';
+    const n = document.createElement('div'); n.textContent = o.nickname; n.style.fontSize = '22px'; d.appendChild(n);
+    const p = document.createElement('div'); p.textContent = o.pts + ' pts'; d.appendChild(p); pod.appendChild(d);
+  });
+  const l = $('fim-lista'); l.textContent = '';
+  r.slice(3, 10).forEach(o => { const d = document.createElement('div'); d.className = 'rank-item'; d.style.fontSize = '20px'; d.innerHTML = '<span class="pos">' + o.pos + 'º</span><span class="nm"></span><b>' + o.pts + '</b>'; d.querySelector('.nm').textContent = o.nickname; l.appendChild(d); });
+  if (!r.length) { l.innerHTML = '<p class="vazio" style="text-align:center">Sem pontuação registrada.</p>'; }
+}
+function baixarCSV() {
+  if (!M.proc.some(r => r.pontos != null)) { toast('Ainda não há dados para exportar.'); return; }
+  const blob = new Blob([Motor.gerarCSV(M.proc)], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bioinova_stop_' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---- editor de roteiro ---- */
+function limparNumeracao(t) { return t.replace(/^\s*\d+\s*[.)\-:]\s+/, '').trim(); }
+function parseAgendaTexto(txt) {
+  const secs = []; let atual = null;
+  txt.replace(/\r/g, '').split('\n').forEach(l => {
+    l = l.trim(); if (!l) return;
+    if (l.startsWith('#')) {
+      const p = l.replace(/^#+\s*/, '').split('|').map(x => x.trim());
+      atual = { titulo: p[0] || 'Seção', tempo_seg: parseInt(p[1], 10) || 180, debate_seg: p[2] !== undefined && p[2] !== '' ? parseInt(p[2], 10) : 120, stop_seg: 20, perguntas: [] }; secs.push(atual);
+    } else { if (!atual) { atual = { titulo: 'Seção 1', tempo_seg: 180, debate_seg: 120, stop_seg: 20, perguntas: [] }; secs.push(atual); } const q = limparNumeracao(l); if (q) atual.perguntas.push(q); }
+  });
+  return secs.filter(s => s.perguntas.length).map((s, i) => Object.assign({ id: novoId(i) }, s));
+}
+function edDeAgenda(ag) { return ag.map(s => ({ id: s.id, titulo: s.titulo, tempo_seg: s.tempo_seg || 180, debate_seg: s.debate_seg == null ? 120 : s.debate_seg, stop_seg: s.stop_seg || 20, perguntasTxt: s.perguntas.join('\n') })); }
+function abrirEditor() {
+  const e = M.estado;
+  if (e.status === 'ABERTA') { toast('Encerre a rodada antes de editar o roteiro.'); return; }
+  M.edit = { titulo: e.titulo, secoes: edDeAgenda(e.agenda) };
+  $('ed-titulo').value = e.titulo; $('ed-erro').textContent = ''; renderEditor(); $('overlay-agenda').hidden = false;
+}
+function atualizarPlanoEditor() {
+  const ag = M.edit.secoes.map(s => ({ tempo_seg: s.tempo_seg, debate_seg: s.debate_seg })), p = planoMin(ag, M.total);
+  const b = $('ed-plano'); b.innerHTML = htmlPlano(p); b.classList.toggle('estouro', p.folga < 0);
+}
+function renderEditor() {
+  const box = $('ed-secoes'); box.textContent = '';
+  M.edit.secoes.forEach((s, i) => {
+    const c = document.createElement('div'); c.className = 'card';
+    const g = document.createElement('div'); g.className = 'grid2';
+    const mk = (lab, el) => { const w = document.createElement('div'); const l = document.createElement('label'); l.textContent = lab; w.appendChild(l); w.appendChild(el); return w; };
+    const ti = document.createElement('input'); ti.type = 'text'; ti.value = s.titulo; ti.maxLength = 100; ti.addEventListener('input', () => { s.titulo = ti.value; });
+    const num = (campo, min, max) => { const n = document.createElement('input'); n.type = 'number'; n.min = min; n.max = max; n.value = s[campo]; n.addEventListener('input', () => { s[campo] = parseInt(n.value, 10) || 0; atualizarPlanoEditor(); }); return n; };
+    g.appendChild(mk('Tema central ' + (i + 1), ti)); g.appendChild(mk('Tempo (s)', num('tempo_seg', 20, 1200))); g.appendChild(mk('Debate (s)', num('debate_seg', 0, 900))); g.appendChild(mk('Após STOP (s)', num('stop_seg', 5, 120)));
+    const ta = document.createElement('textarea'); ta.rows = Math.max(3, s.perguntasTxt.split('\n').length + 1); ta.value = s.perguntasTxt; ta.addEventListener('input', () => { s.perguntasTxt = ta.value; });
+    const act = document.createElement('div'); act.style.cssText = 'display:flex;gap:6px;margin-top:8px';
+    const b = (t, f) => { const x = document.createElement('button'); x.className = 'btn btn-mini'; x.textContent = t; x.addEventListener('click', f); act.appendChild(x); };
+    b('↑', () => { if (i > 0) { M.edit.secoes.splice(i - 1, 0, M.edit.secoes.splice(i, 1)[0]); renderEditor(); } });
+    b('↓', () => { if (i < M.edit.secoes.length - 1) { M.edit.secoes.splice(i + 1, 0, M.edit.secoes.splice(i, 1)[0]); renderEditor(); } });
+    b('🗑 Remover', () => { M.edit.secoes.splice(i, 1); renderEditor(); });
+    c.appendChild(g); c.appendChild(mk('Perguntas (uma por linha)', ta)); c.appendChild(act); box.appendChild(c);
+  });
+  atualizarPlanoEditor();
+}
+async function salvarEditor() {
+  const er = $('ed-erro'); er.textContent = '';
+  const agenda = [];
+  for (const s of M.edit.secoes) {
+    const perguntas = s.perguntasTxt.split('\n').map(limparNumeracao).filter(x => x.length >= 2);
+    if (!s.titulo.trim()) { er.textContent = 'Toda seção precisa de um tema central.'; return; }
+    if (!perguntas.length) { er.textContent = 'A seção “' + s.titulo + '” precisa de pelo menos uma pergunta.'; return; }
+    if (perguntas.length > 10) { er.textContent = 'No máximo 10 perguntas por seção.'; return; }
+    if (s.tempo_seg < 20 || s.tempo_seg > 1200) { er.textContent = 'O tempo de cada rodada deve ficar entre 20 e 1200 segundos.'; return; }
+    agenda.push({ id: s.id, titulo: s.titulo.trim(), tempo_seg: s.tempo_seg, debate_seg: s.debate_seg, stop_seg: s.stop_seg || 20, perguntas });
+  }
+  if (!agenda.length) { er.textContent = 'Inclua pelo menos uma seção.'; return; }
+  try { await adm('bio_admin_salvar_agenda', { p_titulo: $('ed-titulo').value, p_agenda: agenda }); $('overlay-agenda').hidden = true; toast('Roteiro salvo.'); await tickMed(); } catch (e) { er.textContent = 'Não foi possível salvar.'; }
+}
+
+function iniciarMed() {
+  M.total = parseInt(LS.get('bio_total') || '25', 10) || 25; $('in-total').value = M.total;
+  $('btn-med-entrar').addEventListener('click', () => medEntrar($('med-senha').value));
+  $('med-senha').addEventListener('keydown', ev => { if (ev.key === 'Enter') medEntrar($('med-senha').value); });
+  $('btn-mais30').addEventListener('click', async () => { try { await adm('bio_admin_estender', { p_seg: 30 }); await tickMed(); toast('+30 segundos'); } catch (e) { } });
+  $('btn-encerrar').addEventListener('click', async () => { try { await adm('bio_admin_encerrar'); await tickMed(); } catch (e) { } });
+  $('btn-lobby').addEventListener('click', async () => { try { await adm('bio_admin_lobby'); await tickMed(); } catch (e) { } });
+  $('btn-fim').addEventListener('click', async () => { try { await adm('bio_admin_fim'); await tickMed(); } catch (e) { } });
+  $('btn-ver-res').addEventListener('click', () => { M.palco = 'res'; M.sigs.res = null; renderMed(); });
+  $('btn-editar').addEventListener('click', abrirEditor);
+  $('btn-apresentar').addEventListener('click', () => { document.body.classList.add('apresentacao'); $('btn-sair-apres').hidden = false; });
+  $('btn-sair-apres').addEventListener('click', () => { document.body.classList.remove('apresentacao'); $('btn-sair-apres').hidden = true; });
+  $('slider-sim').addEventListener('input', () => { $('val-sim').textContent = $('slider-sim').value; });
+  $('slider-sim').addEventListener('change', async () => { M.limiar = parseInt($('slider-sim').value, 10) / 100; await recarregarRows(); });
+  $('in-total').addEventListener('change', () => { M.total = Math.max(5, parseInt($('in-total').value, 10) || 25); LS.set('bio_total', M.total); M.sigs.ctl = null; renderMed(); });
+  $('btn-csv').addEventListener('click', baixarCSV);
+  $('btn-limpar-ajustes').addEventListener('click', async () => {
+    const itens = M.rows.filter(r => r.secao_id === M.secaoVer && (r.cluster_manual || r.invalida)).map(r => ({ id: r.id, cluster_manual: null, invalida: false }));
+    if (!itens.length) { toast('Não há ajustes manuais nesta seção.'); return; }
+    if (!confirm('Desfazer todos os ajustes manuais (uniões, separações e anulações) desta seção?')) return;
+    try { await adm('bio_admin_ajustar_lote', { p_itens: itens }); await recarregarRows(); } catch (e) { }
+  });
+  $('btn-limpar-secao').addEventListener('click', async () => {
+    const e = M.estado, id = M.secaoVer || e.secao_id; if (!id) { toast('Nenhuma seção selecionada.'); return; }
+    if (!confirm('Apagar TODAS as respostas desta seção?')) return;
+    try { await adm('bio_admin_limpar_secao', { p_secao_id: id }); await tickMed(); } catch (x) { }
+  });
+  $('btn-ensaio').addEventListener('click', async () => {
+    try { const r = await adm('bio_admin_ensaio', { p_n: 12 }); await tickMed(); toast(r.simulados + ' alunos simulados' + (r.respostas_novas ? ' · ' + r.respostas_novas + ' respostas' : ' (abra uma rodada e clique de novo para eles responderem)')); } catch (e) { }
+  });
+  $('btn-limpar-ensaio').addEventListener('click', async () => {
+    try { const r = await adm('bio_admin_limpar_ensaio'); M.sigs = {}; await tickMed(); toast(r.removidos + ' simulados removidos.'); } catch (e) { }
+  });
+  $('btn-zerar').addEventListener('click', async () => {
+    if (!confirm('Apagar TODAS as pessoas e respostas? Use só depois de exportar o CSV.')) return;
+    try { await adm('bio_admin_zerar'); M.rows = []; M.proc = []; M.sigs = {}; await tickMed(); toast('Oficina zerada.'); } catch (e) { }
+  });
+  const trocarSenha = async (ev) => {
+    if (ev) ev.preventDefault();
+    const nova = prompt('Nova senha do mediador (mínimo 6 caracteres):'); if (!nova) return;
+    try { await adm('bio_admin_trocar_senha', { p_nova: nova }); M.senha = nova; SS.set('bio_med', nova); $('aviso-senha').hidden = true; toast('Senha trocada.'); } catch (e) { }
+  };
+  $('btn-senha').addEventListener('click', trocarSenha); $('lnk-trocar-senha').addEventListener('click', trocarSenha);
+  $('res-tabs').addEventListener('click', ev => { const b = ev.target.closest('.tab'); if (!b) return; M.tab = b.dataset.tab; M.sigs.res = null; renderMed(); });
+  $('filtros-nuvem').addEventListener('click', ev => { const b = ev.target.closest('[data-f]'); if (!b) return; M.filtro = b.dataset.f; M.sigs.res = null; renderMed(); });
+  $('sel-secao').addEventListener('change', () => { M.secaoVer = $('sel-secao').value; M.pergIdx = 0; M.sigs.res = null; renderMed(); });
+  $('ed-cancelar').addEventListener('click', () => { $('overlay-agenda').hidden = true; });
+  $('ed-salvar').addEventListener('click', salvarEditor);
+  $('ed-add').addEventListener('click', () => { M.edit.secoes.push({ id: novoId(M.edit.secoes.length), titulo: 'Nova seção', tempo_seg: 180, debate_seg: 120, stop_seg: 20, perguntasTxt: '' }); renderEditor(); });
+  $('ed-preset').addEventListener('change', () => { const v = $('ed-preset').value; if (!v) return; M.edit.secoes = edDeAgenda(presetAgenda(v)); $('ed-preset').value = ''; renderEditor(); });
+  $('ed-file').addEventListener('change', ev => {
+    const f = ev.target.files[0]; if (!f) return; const rd = new FileReader();
+    rd.onload = () => {
+      let secs = [];
+      try { if (/\.json$/i.test(f.name)) { const j = JSON.parse(rd.result); const arr = Array.isArray(j) ? j : j.agenda || []; secs = arr.map((s, i) => ({ id: novoId(i), titulo: s.titulo || 'Seção', tempo_seg: s.tempo_seg || 180, debate_seg: s.debate_seg == null ? 120 : s.debate_seg, stop_seg: s.stop_seg || 20, perguntas: (s.perguntas || []).map(String) })); } else secs = parseAgendaTexto(String(rd.result)); } catch (e) { }
+      if (!secs.length) { $('ed-erro').textContent = 'Não encontrei seções ou perguntas nesse arquivo.'; return; }
+      M.edit.secoes = edDeAgenda(secs); $('ed-erro').textContent = ''; renderEditor();
+    };
+    rd.readAsText(f, 'UTF-8'); ev.target.value = '';
+  });
+  const guardada = SS.get('bio_med'); if (guardada) medEntrar(guardada, true);
+}
+
+/* ===================== INÍCIO ===================== */
+let iniciado = false;
+function iniciar() {
+  definirModo();
+  if (iniciado) return; iniciado = true;
+  iniciarPart(); iniciarMed();
+}
+window.addEventListener('hashchange', () => { definirModo(); });
+window.__BIO = { Motor, M, P, rpc };
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+</script>
+</body>
+</html>
