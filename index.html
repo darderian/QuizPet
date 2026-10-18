@@ -355,10 +355,16 @@ body.apresentacao .controles{display:none}
         <label class="chk">Sensibilidade do agrupamento: <b id="val-sim">62</b>%</label>
         <input type="range" id="slider-sim" min="45" max="90" value="62" style="width:100%;accent-color:#F28C28">
         <label class="chk"><input type="checkbox" id="chk-rel" checked> Filtro de assunto ligado</label>
-        <label class="chk">Corte de relevância (<span id="modo-rel">contraste</span>): <b id="val-rel">-5</b>%</label>
-        <input type="range" id="slider-rel" min="-60" max="70" value="-5" style="width:100%;accent-color:#F28C28">
+        <label class="chk">Corte de relevância (<span id="modo-rel">contraste</span>): <b id="val-rel">-45</b>%</label>
+        <input type="range" id="slider-rel" min="-80" max="70" value="-45" style="width:100%;accent-color:#F28C28">
         <label class="chk"><input type="checkbox" id="chk-sem" checked> Usar modelo semântico</label>
         <button class="btn btn-mini" id="btn-sem-teste" type="button">Testar modelo</button> <span class="dica" id="sem-teste" style="color:var(--n3)"></span>
+        <h3>Laboratório (base simulada: treino × validação)</h3>
+        <label class="chk"><input type="checkbox" class="lab-modelo" value="minilm" checked> MiniLM multilíngue (padrão)</label>
+        <label class="chk"><input type="checkbox" class="lab-modelo" value="mpnet"> MPNet multilíngue (maior)</label>
+        <label class="chk"><input type="checkbox" class="lab-modelo" value="e5"> E5-small multilíngue</label>
+        <label class="chk"><input type="checkbox" class="lab-modelo" value="distil"> DistilUSE multilíngue</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0"><button class="btn btn-mini" id="btn-lab" type="button">🧪 Rodar laboratório</button><button class="btn btn-mini" id="btn-cal-importar" type="button">Importar correções da sala</button></div>
         <h3>Calibração (conjunto de teste)</h3>
         <p class="dica" style="color:var(--n3)">Relevância: <code>tema | resposta | ok</code> ou <code>fora</code>. Agrupamento: <code>grupo | texto</code>, linha em branco separa perguntas.</p>
         <textarea id="cal-rel" rows="5" style="width:100%" placeholder="tema | resposta | ok/fora"></textarea>
@@ -587,7 +593,14 @@ const Motor = (function () {
     [/\blaboratorial\b/g, 'laboratorio'], [/\blab\b/g, 'laboratorio'], [/\bcurador(?:ia)?\b/g, 'curadoria'],
     [/\bbig data\b/g, 'grandes dados'], [/\btelessaude\b/g, 'telemedicina'], [/\bdata science\b/g, 'ciencia dados'],
     [/\bcienci[ao] de dados\b/g, 'ciencia dados'], [/\blgpd\b/g, 'protecao dados'], [/\bprivacidade de dados\b/g, 'protecao dados'],
-    [/\bseguranca de dados\b/g, 'protecao dados']
+    [/\bseguranca de dados\b/g, 'protecao dados'],
+    // siglas e termos biomédicos/tecnológicos: mantêm a sigla e acrescentam o nome por extenso
+    [/\bcrispr\b/g, 'crispr edicao genetica'], [/\bm ?rna\b/g, 'mrna rna mensageiro'], [/\bdna\b/g, 'dna acido desoxirribonucleico'],
+    [/\bpcr\b/g, 'pcr reacao cadeia polimerase'], [/\bngs\b/g, 'ngs sequenciamento'], [/\bsus\b/g, 'sus sistema unico saude'],
+    [/\buti\b/g, 'uti terapia intensiva'], [/\becg\b/g, 'ecg eletrocardiograma'], [/\bhiv\b/g, 'hiv virus imunodeficiencia'],
+    [/\bpep\b/g, 'pep prontuario eletronico'], [/\bnlp\b/g, 'nlp processamento linguagem natural'], [/\bllm\b/g, 'llm modelos linguagem'],
+    [/\biot\b/g, 'iot internet coisas'], [/\bvr\b/g, 'vr realidade virtual'], [/\bchat ?gpt\b/g, 'chatgpt inteligencia artificial'],
+    [/\banvisa\b/g, 'anvisa regulacao sanitaria'], [/\bcrm\b/g, 'crm conselho medicina'], [/\bwearables?\b/g, 'wearable dispositivos vestiveis']
   ];
   function stem(w) {
     if (w.length > 4 && w.endsWith('oes')) return w.slice(0, -3) + 'ao';
@@ -743,6 +756,10 @@ const Motor = (function () {
       }
       vivo.forEach(i => clusters.push({ gid: 'a:' + cs[i].k + ':' + cs[i].rep.id, sk: cs[i].k, itens: cs[i].itens, fixo: null }));
       clusters.forEach(c => {
+        // ideia única vale 10 pts: exige sinal de relevância mais forte que o corte normal (exceto se o mediador aceitou à mão)
+        if (c.itens.length === 1 && !c.fixo && sem && sem.corteUnica != null && relv.has(c.itens[0].id) && relv.get(c.itens[0].id) < sem.corteUnica) {
+          const r = c.itens[0]; out.push(Object.assign({}, r, { cluster: null, freq: 0, pontos: 0, fora: 'tema', rel: relv.get(r.id) })); return;
+        }
         const label = c.fixo || rotulo(c.itens), freq = c.itens.length, pontos = freq === 1 ? 10 : 5;
         c.itens.forEach(r => out.push(Object.assign({}, r, { cluster: label, freq, pontos, rel: relv.has(r.id) ? relv.get(r.id) : null })));
       });
@@ -1079,7 +1096,7 @@ function htmlPlano(p) {
   return '<b>⏱ ≈ ' + Math.round(p.usado) + ' min de ' + p.total + ' min</b> ' + (p.folga >= 0 ? '(sobram ' + Math.round(p.folga) + ' min)' : '<span style="color:#ff8f86">(estoura em ' + Math.round(-p.folga) + ' min!)</span>') + '<div class="barra"><i style="width:' + pct + '%"></i></div><small style="color:var(--n3)">Inclui 3 min de entrada, tempo de cada rodada, debate e 2 min de encerramento.</small>';
 }
 
-const M = { app: false, nick: null, sala: null, geral: false, convite: null, publicaInit: false, senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.62, relevancia: -0.05, relModo: 'contraste', relOn: true, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
+const M = { app: false, nick: null, sala: null, geral: false, convite: null, publicaInit: false, senha: null, estado: null, offset: 0, rows: [], proc: [], versaoRows: -2, limiar: 0.62, relevancia: -0.45, relUnicaExtra: 0.10, relModo: 'contraste', relOn: true, palco: null, ultStatus: null, tab: 'nuvem', secaoVer: null, pergIdx: 0, filtro: 'todos', fechando: false, processando: false, seeded: false, total: 25, edit: null, loop: false, sigs: {} };
 
 async function medEntrar(nick, pwd, silencioso) {
   const er = $('med-erro'); er.textContent = '';
@@ -1166,7 +1183,37 @@ async function recarregarRows(render) {
 }
 /* ---- Modelo semântico (opcional, só no navegador do mediador; os participantes nunca baixam nada) ---- */
 const SEM_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
-const SEM_MODELO = 'Xenova/paraphrase-multilingual-MiniLM-L12-v2';
+const SEM_MODELOS = {
+  minilm: { nome: 'MiniLM multilíngue (padrão, ~120 MB)', hf: 'Xenova/paraphrase-multilingual-MiniLM-L12-v2' },
+  mpnet: { nome: 'MPNet multilíngue (maior, ~280 MB)', hf: 'Xenova/paraphrase-multilingual-mpnet-base-v2' },
+  e5: { nome: 'E5-small multilíngue (~120 MB)', hf: 'Xenova/multilingual-e5-small', prefixo: 'query: ' },
+  distil: { nome: 'DistilUSE multilíngue (~135 MB)', hf: 'Xenova/distiluse-base-multilingual-cased-v2' }
+};
+const SEM_PADRAO = 'minilm';
+const modeloAtual = () => { const id = devAtivo() ? LS.get('bio_modelo') : null; return SEM_MODELOS[id] ? id : SEM_PADRAO; };
+let _semMod = null;
+const CRIAR = {
+  async fn(id) {
+    const cfg = SEM_MODELOS[id];
+    if (!_semMod) { _semMod = await import(SEM_URL); _semMod.env.allowLocalModels = false; }
+    const ext = await _semMod.pipeline('feature-extraction', cfg.hf, { dtype: 'q8' });
+    return async txts => { const o = await ext(txts.map(t => (cfg.prefixo || '') + t), { pooling: 'mean', normalize: true }); return o.tolist().map(v => Float32Array.from(v)); };
+  }
+};
+// calcula e guarda (em S) os vetores que faltam: respostas, contexto (título da seção + pergunta) e âncoras
+async function embedRows(S, rows) {
+  const falta = new Set(), ctxs = new Map();
+  rows.forEach(r => {
+    const t = Motor.expandir(r.resposta); if (t && !S.vecs.has(t)) falta.add(t);
+    const k = r.secao_id + '|' + r.pergunta_idx; if (!S.ctx.has(k)) ctxs.set(k, [r.secao_titulo, r.pergunta].filter(Boolean).join('. '));
+  });
+  if (!S.offVecs) S.offVecs = await S.embed(OFF_TXT);
+  const L = Array.from(falta), C = Array.from(ctxs.entries());
+  if (!L.length && !C.length) return false;
+  for (let i = 0; i < L.length; i += 32) { const lote = L.slice(i, i + 32), v = await S.embed(lote); lote.forEach((t, j) => S.vecs.set(t, v[j])); }
+  if (C.length) { const v = await S.embed(C.map(c => c[1])); C.forEach((c, j) => S.ctx.set(c[0], v[j])); }
+  return true;
+}
 const OFF_TXT = ['comida', 'sobremesa', 'fruta', 'feijoada', 'futebol', 'esporte', 'praia', 'férias', 'carnaval', 'festa', 'música', 'violão', 'samba', 'novela', 'filme', 'cachorro', 'gato', 'animais', 'chuva', 'clima', 'carro esportivo', 'bicicleta', 'brinquedo', 'roupa', 'moda', 'dormir', 'cerveja', 'viagem de turismo'];
 const Sem = {
   estado: 'off', vecs: new Map(), ctx: new Map(), embed: null, erro: '', offVecs: null,
@@ -1177,10 +1224,7 @@ const Sem = {
     if (this.estado === 'carregando' || this.estado === 'pronto') return;
     this.estado = 'carregando'; this.status();
     try {
-      const mod = await import(SEM_URL);
-      mod.env.allowLocalModels = false;
-      const ext = await mod.pipeline('feature-extraction', SEM_MODELO, { dtype: 'q8' });
-      this.embed = async txts => { const o = await ext(txts, { pooling: 'mean', normalize: true }); return o.tolist().map(v => Float32Array.from(v)); };
+      this.embed = await CRIAR.fn(modeloAtual());
       this.estado = 'pronto';
     } catch (e) { this.estado = 'erro'; this.erro = String((e && e.message) || e).slice(0, 80); }
     this.status();
@@ -1197,19 +1241,9 @@ const Sem = {
   // calcula vetores que faltam (respostas e "contexto" = título da seção + pergunta)
   async garantir(rows) {
     if (this.estado !== 'pronto' || !this.ligado() || !this.embed) return false;
-    const falta = new Set(), ctxs = new Map();
-    rows.forEach(r => {
-      const t = Motor.expandir(r.resposta); if (t && !this.vecs.has(t)) falta.add(t);
-      const k = r.secao_id + '|' + r.pergunta_idx; if (!this.ctx.has(k)) ctxs.set(k, [r.secao_titulo, r.pergunta].filter(Boolean).join('. '));
-    });
-    if (!this.offVecs) this.offVecs = await this.embed(OFF_TXT);
-    const L = Array.from(falta), C = Array.from(ctxs.entries());
-    if (!L.length && !C.length) return false;
-    for (let i = 0; i < L.length; i += 32) { const lote = L.slice(i, i + 32), v = await this.embed(lote); lote.forEach((t, j) => this.vecs.set(t, v[j])); }
-    if (C.length) { const v = await this.embed(C.map(c => c[1])); C.forEach((c, j) => this.ctx.set(c[0], v[j])); }
-    return true;
+    return embedRows(this, rows);
   },
-  vista() { return { vec: t => this.vec(t), ctx: k => this.ctxDe(k), off: () => this.offVecs || [], modo: M.relModo, corte: M.relOn ? M.relevancia : null }; }
+  vista() { return { vec: t => this.vec(t), ctx: k => this.ctxDe(k), off: () => this.offVecs || [], modo: M.relModo, corte: M.relOn ? M.relevancia : null, corteUnica: M.relOn ? M.relevancia + M.relUnicaExtra : null }; }
 };
 /* ---- Calibração (só desenvolvedor): mede o modelo real com um conjunto de teste e sugere os melhores valores ---- */
 const CAL_REL = `Competências humanas fundamentais | Empatia | ok
@@ -1327,7 +1361,94 @@ const CAL_GRP = `0 | IA
 1 | Burocracia
 1 | Burocracia da Anvisa
 1 | Demora na aprovação`;
-const CAL = { corte: null, limiar: null, modo: null };
+const LAB = {"rel": [["Competências humanas fundamentais", "Empatia", "ok", "train"], ["Competências humanas fundamentais", "Comunicação clara", "ok", "train"], ["Competências humanas fundamentais", "Pensamento crítico", "ok", "train"], ["Competências humanas fundamentais", "Trabalho em equipe", "ok", "train"], ["Competências humanas fundamentais", "Criatividade", "ok", "train"], ["Competências humanas fundamentais", "Ética profissional", "ok", "train"], ["Competências humanas fundamentais", "Liderança", "ok", "train"], ["Competências humanas fundamentais", "Escuta ativa", "ok", "train"], ["Competências humanas fundamentais", "Resiliência", "ok", "train"], ["Competências humanas fundamentais", "Adaptabilidade", "ok", "train"], ["Competências humanas fundamentais", "Tomada de decisão", "ok", "train"], ["Competências humanas fundamentais", "Atividade física", "ok", "train"], ["Competências humanas fundamentais", "Mochila", "fora", "train"], ["Competências humanas fundamentais", "Sorvete", "fora", "train"], ["Competências humanas fundamentais", "Jardim", "fora", "train"], ["Competências humanas fundamentais", "Uva", "fora", "train"], ["Tarefas que poderão ser automatizadas", "Laudos de exames", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Triagem de imagens", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Agendamento de consultas", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Digitação de prontuários", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Pipetagem", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Contagem de células", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Controle de estoque do laboratório", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Emissão de relatórios", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Análise de lâminas", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Preenchimento de formulários", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Alimentação saudável", "ok", "train"], ["Tarefas que poderão ser automatizadas", "Bolo de cenoura", "fora", "train"], ["Tarefas que poderão ser automatizadas", "Montanha-russa", "fora", "train"], ["Tarefas que poderão ser automatizadas", "Escada", "fora", "train"], ["Tarefas que poderão ser automatizadas", "Pipoca", "fora", "train"], ["Conhecimentos digitais necessários", "Programação", "ok", "val"], ["Conhecimentos digitais necessários", "Python", "ok", "val"], ["Conhecimentos digitais necessários", "Estatística", "ok", "val"], ["Conhecimentos digitais necessários", "Bancos de dados", "ok", "val"], ["Conhecimentos digitais necessários", "Segurança da informação", "ok", "val"], ["Conhecimentos digitais necessários", "Inteligência artificial", "ok", "val"], ["Conhecimentos digitais necessários", "Planilhas", "ok", "val"], ["Conhecimentos digitais necessários", "Visualização de dados", "ok", "val"], ["Conhecimentos digitais necessários", "Bioinformática", "ok", "val"], ["Conhecimentos digitais necessários", "Raciocínio computacional", "ok", "val"], ["Conhecimentos digitais necessários", "Machine learning", "ok", "val"], ["Conhecimentos digitais necessários", "Sorveteria", "fora", "val"], ["Conhecimentos digitais necessários", "Uva", "fora", "val"], ["Conhecimentos digitais necessários", "Qual o horário do almoço", "fora", "val"], ["Conhecimentos digitais necessários", "Colher", "fora", "val"], ["Novas atividades profissionais", "Curador de dados", "ok", "train"], ["Novas atividades profissionais", "Bioinformata", "ok", "train"], ["Novas atividades profissionais", "Engenheiro de prompts", "ok", "train"], ["Novas atividades profissionais", "Gestor de telemedicina", "ok", "train"], ["Novas atividades profissionais", "Conselheiro genético", "ok", "train"], ["Novas atividades profissionais", "Analista de wearables", "ok", "train"], ["Novas atividades profissionais", "Auditor de algoritmos clínicos", "ok", "train"], ["Novas atividades profissionais", "Navegador de pacientes", "ok", "train"], ["Novas atividades profissionais", "Especialista em ética de IA", "ok", "train"], ["Novas atividades profissionais", "Designer de terapias digitais", "ok", "train"], ["Novas atividades profissionais", "Músico terapeuta", "ok", "train"], ["Novas atividades profissionais", "Surfe", "fora", "train"], ["Novas atividades profissionais", "Guarda-chuva", "fora", "train"], ["Novas atividades profissionais", "Elefante", "fora", "train"], ["Novas atividades profissionais", "Ônibus", "fora", "train"], ["Que tecnologia vai mudar mais a saúde", "CRISPR", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Telemedicina", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Inteligência artificial", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Impressão 3D", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Wearables", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Vacinas de mRNA", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Prontuário eletrônico", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Sequenciamento de DNA", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Robôs cirúrgicos", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Nanotecnologia", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Biossensores", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Aplicativo de bem-estar", "ok", "train"], ["Que tecnologia vai mudar mais a saúde", "Bolo de cenoura", "fora", "train"], ["Que tecnologia vai mudar mais a saúde", "Tobogã", "fora", "train"], ["Que tecnologia vai mudar mais a saúde", "Guarda-chuva", "fora", "train"], ["Que tecnologia vai mudar mais a saúde", "Balão de festa", "fora", "train"], ["Principais barreiras da pesquisa no Brasil", "Falta de investimento", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Burocracia", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Pouca valorização do pesquisador", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Falta de equipamentos", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Fuga de cérebros", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Demora na aprovação ética", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Poucos laboratórios", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Dependência de insumos importados", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Cortes de bolsas", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Pouca integração com a indústria", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Animais de laboratório", "ok", "val"], ["Principais barreiras da pesquisa no Brasil", "Elefante", "fora", "val"], ["Principais barreiras da pesquisa no Brasil", "Uva", "fora", "val"], ["Principais barreiras da pesquisa no Brasil", "Colchão", "fora", "val"], ["Principais barreiras da pesquisa no Brasil", "Janela", "fora", "val"], ["Como a IA pode ajudar o diagnóstico", "Leitura de radiografias", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Detecção precoce de câncer", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Análise de exames de sangue", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Triagem de retinopatia", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Apoio à decisão clínica", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Priorização de casos urgentes", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Segunda opinião automática", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Reconhecimento de padrões em imagens", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Predição de risco", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Diagnóstico por voz", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Chatbot de atendimento", "ok", "train"], ["Como a IA pode ajudar o diagnóstico", "Bússola", "fora", "train"], ["Como a IA pode ajudar o diagnóstico", "Sorveteria", "fora", "train"], ["Como a IA pode ajudar o diagnóstico", "Uva", "fora", "train"], ["Como a IA pode ajudar o diagnóstico", "Colchão", "fora", "train"], ["Riscos éticos da IA na saúde", "Viés nos algoritmos", "ok", "train"], ["Riscos éticos da IA na saúde", "Vazamento de dados", "ok", "train"], ["Riscos éticos da IA na saúde", "Falta de transparência", "ok", "train"], ["Riscos éticos da IA na saúde", "Responsabilidade por erros", "ok", "train"], ["Riscos éticos da IA na saúde", "Consentimento do paciente", "ok", "train"], ["Riscos éticos da IA na saúde", "Discriminação de grupos", "ok", "train"], ["Riscos éticos da IA na saúde", "Dependência excessiva da máquina", "ok", "train"], ["Riscos éticos da IA na saúde", "Privacidade", "ok", "train"], ["Riscos éticos da IA na saúde", "LGPD", "ok", "train"], ["Riscos éticos da IA na saúde", "Desumanização do cuidado", "ok", "train"], ["Riscos éticos da IA na saúde", "Segurança no trânsito", "ok", "train"], ["Riscos éticos da IA na saúde", "Sorveteria", "fora", "train"], ["Riscos éticos da IA na saúde", "Jardim", "fora", "train"], ["Riscos éticos da IA na saúde", "Uva", "fora", "train"], ["Riscos éticos da IA na saúde", "Bússola", "fora", "train"], ["Ferramentas para analisar dados de saúde", "R", "ok", "val"], ["Ferramentas para analisar dados de saúde", "Python", "ok", "val"], ["Ferramentas para analisar dados de saúde", "Excel", "ok", "val"], ["Ferramentas para analisar dados de saúde", "SQL", "ok", "val"], ["Ferramentas para analisar dados de saúde", "Power BI", "ok", "val"], ["Ferramentas para analisar dados de saúde", "Tableau", "ok", "val"], ["Ferramentas para analisar dados de saúde", "SPSS", "ok", "val"], ["Ferramentas para analisar dados de saúde", "Jupyter Notebook", "ok", "val"], ["Ferramentas para analisar dados de saúde", "Stata", "ok", "val"], ["Ferramentas para analisar dados de saúde", "Pandas", "ok", "val"], ["Ferramentas para analisar dados de saúde", "Surfe", "fora", "val"], ["Ferramentas para analisar dados de saúde", "Balão de festa", "fora", "val"], ["Ferramentas para analisar dados de saúde", "Tartaruga", "fora", "val"], ["Ferramentas para analisar dados de saúde", "Travesseiro", "fora", "val"], ["O que torna um bom profissional da saúde", "Conhecimento técnico", "ok", "train"], ["O que torna um bom profissional da saúde", "Humanização", "ok", "train"], ["O que torna um bom profissional da saúde", "Atualização constante", "ok", "train"], ["O que torna um bom profissional da saúde", "Ética", "ok", "train"], ["O que torna um bom profissional da saúde", "Capacidade de ouvir", "ok", "train"], ["O que torna um bom profissional da saúde", "Trabalho multidisciplinar", "ok", "train"], ["O que torna um bom profissional da saúde", "Raciocínio clínico", "ok", "train"], ["O que torna um bom profissional da saúde", "Organização", "ok", "train"], ["O que torna um bom profissional da saúde", "Compromisso com o paciente", "ok", "train"], ["O que torna um bom profissional da saúde", "Cuidado consigo mesmo", "ok", "train"], ["O que torna um bom profissional da saúde", "Dormir bem", "ok", "train"], ["O que torna um bom profissional da saúde", "Ônibus", "fora", "train"], ["O que torna um bom profissional da saúde", "Sorvete", "fora", "train"], ["O que torna um bom profissional da saúde", "Montanha-russa", "fora", "train"], ["O que torna um bom profissional da saúde", "Janela", "fora", "train"], ["Medicina personalizada", "Genômica", "ok", "train"], ["Medicina personalizada", "Tratamento individualizado", "ok", "train"], ["Medicina personalizada", "Farmacogenética", "ok", "train"], ["Medicina personalizada", "Perfil molecular do tumor", "ok", "train"], ["Medicina personalizada", "Dados do paciente", "ok", "train"], ["Medicina personalizada", "Biomarcadores", "ok", "train"], ["Medicina personalizada", "Terapia dirigida", "ok", "train"], ["Medicina personalizada", "Sequenciamento", "ok", "train"], ["Medicina personalizada", "Medicina de precisão", "ok", "train"], ["Medicina personalizada", "Gêmeo digital", "ok", "train"], ["Medicina personalizada", "Colchão", "fora", "train"], ["Medicina personalizada", "Relógio de parede", "fora", "train"], ["Medicina personalizada", "Balão de festa", "fora", "train"], ["Medicina personalizada", "Pijama", "fora", "train"], ["Saúde digital e telemedicina", "Consulta remota", "ok", "val"], ["Saúde digital e telemedicina", "Prontuário eletrônico", "ok", "val"], ["Saúde digital e telemedicina", "Receita digital", "ok", "val"], ["Saúde digital e telemedicina", "Telemonitoramento", "ok", "val"], ["Saúde digital e telemedicina", "Aplicativos de saúde", "ok", "val"], ["Saúde digital e telemedicina", "Internet de qualquer lugar", "ok", "val"], ["Saúde digital e telemedicina", "Telerradiologia", "ok", "val"], ["Saúde digital e telemedicina", "Wearables", "ok", "val"], ["Saúde digital e telemedicina", "Teleducação", "ok", "val"], ["Saúde digital e telemedicina", "Inclusão digital", "ok", "val"], ["Saúde digital e telemedicina", "Música ambiente", "ok", "val"], ["Saúde digital e telemedicina", "Escada", "fora", "val"], ["Saúde digital e telemedicina", "Sorveteria", "fora", "val"], ["Saúde digital e telemedicina", "Colchão", "fora", "val"], ["Saúde digital e telemedicina", "Vulcão", "fora", "val"], ["Desafios da vacinação", "Desinformação", "ok", "train"], ["Desafios da vacinação", "Hesitação vacinal", "ok", "train"], ["Desafios da vacinação", "Cadeia de frio", "ok", "train"], ["Desafios da vacinação", "Logística", "ok", "train"], ["Desafios da vacinação", "Acesso em áreas remotas", "ok", "train"], ["Desafios da vacinação", "Fake news", "ok", "train"], ["Desafios da vacinação", "Registro de doses", "ok", "train"], ["Desafios da vacinação", "Efeitos adversos", "ok", "train"], ["Desafios da vacinação", "Campanhas de conscientização", "ok", "train"], ["Desafios da vacinação", "Financiamento", "ok", "train"], ["Desafios da vacinação", "Alimentação balanceada", "ok", "train"], ["Desafios da vacinação", "Pipoca", "fora", "train"], ["Desafios da vacinação", "Escada", "fora", "train"], ["Desafios da vacinação", "Balão de festa", "fora", "train"], ["Desafios da vacinação", "Bolo de cenoura", "fora", "train"], ["Biotecnologia e meio ambiente", "Biorremediação", "ok", "train"], ["Biotecnologia e meio ambiente", "Biocombustíveis", "ok", "train"], ["Biotecnologia e meio ambiente", "Plásticos biodegradáveis", "ok", "train"], ["Biotecnologia e meio ambiente", "Tratamento de esgoto", "ok", "train"], ["Biotecnologia e meio ambiente", "Agricultura sustentável", "ok", "train"], ["Biotecnologia e meio ambiente", "Enzimas industriais", "ok", "train"], ["Biotecnologia e meio ambiente", "Bioplásticos", "ok", "train"], ["Biotecnologia e meio ambiente", "Monitoramento de poluentes", "ok", "train"], ["Biotecnologia e meio ambiente", "Microrganismos", "ok", "train"], ["Biotecnologia e meio ambiente", "Conservação de espécies", "ok", "train"], ["Biotecnologia e meio ambiente", "Clima agradável", "ok", "train"], ["Biotecnologia e meio ambiente", "Colchão", "fora", "train"], ["Biotecnologia e meio ambiente", "Uva", "fora", "train"], ["Biotecnologia e meio ambiente", "Lanchonete", "fora", "train"], ["Biotecnologia e meio ambiente", "Colher", "fora", "train"], ["Educação em saúde", "Prevenção de doenças", "ok", "val"], ["Educação em saúde", "Campanhas nas escolas", "ok", "val"], ["Educação em saúde", "Linguagem acessível", "ok", "val"], ["Educação em saúde", "Redes sociais", "ok", "val"], ["Educação em saúde", "Agentes comunitários", "ok", "val"], ["Educação em saúde", "Palestras", "ok", "val"], ["Educação em saúde", "Cartilhas", "ok", "val"], ["Educação em saúde", "Vídeos curtos", "ok", "val"], ["Educação em saúde", "Rodas de conversa", "ok", "val"], ["Educação em saúde", "Educação continuada", "ok", "val"], ["Educação em saúde", "Atividade física na escola", "ok", "val"], ["Educação em saúde", "Quero dormir", "fora", "val"], ["Educação em saúde", "Montanha-russa", "fora", "val"], ["Educação em saúde", "Elefante", "fora", "val"], ["Educação em saúde", "Mochila", "fora", "val"], ["Futuro das profissões de laboratório", "Automação", "ok", "train"], ["Futuro das profissões de laboratório", "Análise de dados", "ok", "train"], ["Futuro das profissões de laboratório", "Controle de qualidade", "ok", "train"], ["Futuro das profissões de laboratório", "Biologia computacional", "ok", "train"], ["Futuro das profissões de laboratório", "Gestão de projetos", "ok", "train"], ["Futuro das profissões de laboratório", "Biossegurança", "ok", "train"], ["Futuro das profissões de laboratório", "Inteligência artificial", "ok", "train"], ["Futuro das profissões de laboratório", "Robótica", "ok", "train"], ["Futuro das profissões de laboratório", "Interpretação de resultados", "ok", "train"], ["Futuro das profissões de laboratório", "Rastreabilidade", "ok", "train"], ["Futuro das profissões de laboratório", "Hoje vou ao mercado", "fora", "train"], ["Futuro das profissões de laboratório", "Sorveteria", "fora", "train"], ["Futuro das profissões de laboratório", "Pipoca", "fora", "train"], ["Futuro das profissões de laboratório", "Relógio de parede", "fora", "train"]], "grp": [[[0, "IA"], [0, "Inteligência artificial"], [0, "uso de IA no diagnóstico"], [1, "Machine learning"], [1, "aprendizado de máquina"], [1, "Redes neurais profundas"], [2, "Ética em IA"], [2, "viés nos algoritmos"]], [[0, "Análise de dados"], [0, "Ciência de dados"], [0, "Data science"], [1, "Big data"], [1, "Grandes volumes de dados"], [2, "Estatística"], [2, "Bioestatística"]], [[0, "Telemedicina"], [0, "Telessaúde"], [0, "Consulta remota"], [0, "Atendimento a distância"], [1, "Prontuário eletrônico"], [1, "Registro digital do paciente"]], [[0, "Empatia"], [0, "Ter empatia"], [1, "Comunicação"], [1, "Comunicação clara com paciente"], [2, "Trabalho em equipe"], [2, "Equipe multidisciplinar"], [2, "Colaboração entre áreas"]], [[0, "Automação de laudos"], [0, "Laudos automáticos"], [0, "Laudo gerado por computador"], [1, "Automação laboratorial"], [1, "Robôs de pipetagem"], [1, "Robótica no laboratório"]], [[0, "Privacidade de dados"], [0, "LGPD"], [0, "Proteção de dados"], [0, "Segurança dos dados do paciente"], [1, "Ética na pesquisa"], [1, "Comitê de ética"], [1, "Consentimento informado"]], [[0, "Edição genética"], [0, "CRISPR"], [0, "Edição de genes com CRISPR"], [1, "Sequenciamento de DNA"], [1, "Sequenciamento genético"], [1, "Genômica"]], [[0, "Falta de investimento"], [0, "Pouco investimento em pesquisa"], [0, "Falta de verba"], [0, "Financiamento escasso"], [1, "Burocracia"], [1, "Burocracia da Anvisa"], [1, "Demora na aprovação"]], [[0, "Vacinas de mRNA"], [0, "vacina mrna"], [0, "Vacinas"], [1, "Imunização em massa"], [1, "Campanhas de vacinação"], [2, "Medicina personalizada"], [2, "Medicina de precisão"], [2, "Tratamento individualizado"]], [[0, "Wearables"], [0, "Relógios inteligentes"], [0, "Sensores vestíveis"], [0, "Dispositivos vestíveis para saúde"], [1, "Aplicativos de saúde"], [1, "Apps de saúde"], [1, "Saúde digital"]], [[0, "Impressão 3D de próteses"], [0, "Prótese impressa em 3D"], [0, "Próteses personalizadas"], [1, "Bioimpressão de tecidos"], [1, "Bioimpressão"], [1, "Engenharia de tecidos"]], [[0, "Diagnóstico precoce"], [0, "Detecção precoce"], [0, "Rastreamento"], [1, "Tratamento do câncer"], [1, "Oncologia"], [1, "Quimioterapia"]], [[0, "PCR"], [0, "Reação em cadeia da polimerase"], [1, "Sequenciador de DNA"], [1, "NGS"], [2, "Western blot"], [2, "Eletroforese"]], [[0, "SUS"], [0, "Sistema Único de Saúde"], [0, "Saúde pública"], [1, "Planos de saúde"], [1, "Saúde suplementar"]], [[0, "Prontuário eletrônico"], [0, "PEP"], [0, "Registro eletrônico de saúde"], [1, "Receita digital"], [1, "Prescrição eletrônica"]], [[0, "Realidade virtual"], [0, "Realidade aumentada"], [0, "Simulação imersiva"], [1, "Gêmeos digitais"], [1, "Modelos computacionais do corpo"]], [[0, "Resistência a antibióticos"], [0, "Bactérias multirresistentes"], [1, "Novos antibióticos"], [1, "Descoberta de fármacos"], [1, "Desenvolvimento de medicamentos"]], [[0, "Saúde mental"], [0, "Bem-estar emocional"], [0, "Apoio psicológico"], [1, "Burnout"], [1, "Esgotamento profissional"]], [[0, "Células-tronco"], [0, "Terapia celular"], [0, "Medicina regenerativa"], [1, "Edição de genes"], [1, "Terapia gênica"]], [[0, "Microbioma"], [0, "Flora intestinal"], [1, "Probióticos"], [1, "Alimentação saudável"], [2, "Nutrição personalizada"]], [[0, "Internet das coisas"], [0, "IoT"], [0, "Dispositivos conectados"], [1, "Computação em nuvem"], [1, "Armazenamento em nuvem"]], [[0, "Cirurgia robótica"], [0, "Robôs cirúrgicos"], [0, "Cirurgia assistida por robô"], [1, "Cirurgia minimamente invasiva"], [1, "Laparoscopia"]], [[0, "Pesquisa clínica"], [0, "Ensaios clínicos"], [0, "Estudos com pacientes"], [1, "Revisão sistemática"], [1, "Metanálise"]], [[0, "Genética"], [0, "Hereditariedade"], [0, "Doenças genéticas"], [1, "Epigenética"], [1, "Expressão gênica"]]]};
+const CAL = { corte: null, limiar: null, modo: null, modelo: null, extra: null };
+function aucDe(pts) {
+  const ok = pts.filter(p => !p.fora), fo = pts.filter(p => p.fora); if (!ok.length || !fo.length) return 0;
+  let w = 0; ok.forEach(a => fo.forEach(b => { w += a.s > b.s ? 1 : a.s === b.s ? 0.5 : 0; })); return w / (ok.length * fo.length);
+}
+function metricaCorte(pts, c) {
+  let tp = 0, fp = 0, fn = 0; pts.forEach(p => { const pred = p.s < c; if (pred && p.fora) tp++; else if (pred) fp++; else if (p.fora) fn++; });
+  const P = tp + fp ? tp / (tp + fp) : 1, R = tp + fn ? tp / (tp + fn) : 0;
+  return { tp, fp, fn, P, R, f: (P + R) ? (1.25 * P * R) / (0.25 * P + R) : 0 };
+}
+function melhorCorteDe(pts) {
+  const vals = Array.from(new Set(pts.map(p => p.s))).sort((x, y) => x - y); let m = null;
+  for (let i = 0; i <= vals.length; i++) {
+    const c = i === 0 ? vals[0] - 0.01 : i === vals.length ? vals[i - 1] + 0.01 : (vals[i - 1] + vals[i]) / 2, k = metricaCorte(pts, c);
+    if (!m || k.f > m.f + 1e-9) m = Object.assign({ c }, k);
+  }
+  return m;
+}
+function f1Grupos(rowsG, S, limiar, split, semTexto) {
+  const sub = rowsG.filter(r => r.split === split);
+  const res = Motor.processar(sub, limiar, semTexto ? undefined : { vec: t => S.vecs.get(t), ctx: () => null, corte: null });
+  const lab = new Map(res.map(r => [r.id, r.cluster])), por = new Map(); sub.forEach(r => { if (!por.has(r.k)) por.set(r.k, []); por.get(r.k).push(r); });
+  let tp = 0, fp = 0, fn = 0;
+  por.forEach(b => { for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) {
+    const igual = b[i].grupo === b[j].grupo, junta = lab.get(b[i].id) === lab.get(b[j].id);
+    if (igual && junta) tp++; else if (igual) fn++; else if (junta) fp++; } });
+  const P = tp + fp ? tp / (tp + fp) : 1, R = tp + fn ? tp / (tp + fn) : 0;
+  return { P, R, f: (P + R) ? 2 * P * R / (P + R) : 0 };
+}
+// treina (escolhe método/cortes no conjunto de treino) e valida (mede no conjunto que não viu)
+async function labAvaliar(S) {
+  const rowsR = LAB.rel.map((a, i) => ({ id: 'l' + i, secao_id: a[0], pergunta_idx: 0, secao_titulo: '', pergunta: a[0], resposta: a[1], fora: a[2] === 'fora', split: a[3] }));
+  const rowsG = []; LAB.grp.forEach((b, k) => b.forEach((a, i) => rowsG.push({ id: 'g' + k + '_' + i, secao_id: 'g' + k, pergunta_idx: 0, secao_titulo: '', pergunta: '', resposta: a[1], grupo: a[0], nickname: 'n' + rowsG.length, cluster_manual: null, invalida: false, split: k % 3 === 2 ? 'val' : 'train', k })));
+  await embedRows(S, rowsR.concat(rowsG));
+  const semV = { vec: t => S.vecs.get(t), off: () => S.offVecs || [] }, por = new Map();
+  rowsR.forEach(r => { if (!por.has(r.secao_id)) por.set(r.secao_id, []); por.get(r.secao_id).push(r); });
+  const modos = ['ctx', 'centroide', 'max', 'contraste'], pts = {};
+  modos.forEach(m => { pts[m] = []; por.forEach((lista, k) => { const mp = Motor.relevancias(lista, semV, S.ctx.get(k + '|0'), m); lista.forEach(r => { if (mp.has(r.id)) pts[m].push({ s: mp.get(r.id), fora: r.fora, split: r.split, r }); }); }); });
+  const tr = m => pts[m].filter(p => p.split === 'train'), va = m => pts[m].filter(p => p.split === 'val');
+  let best = null; modos.forEach(m => { const a = aucDe(tr(m)); if (!best || a > best.a + 1e-9) best = { m, a }; });
+  const cut = melhorCorteDe(tr(best.m)), vp = va(best.m), mv = metricaCorte(vp, cut.c);
+  let ex = { e: 0, f: -1 }; [0, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2].forEach(e => { const k = metricaCorte(tr(best.m), cut.c + e); if (k.f > ex.f + 1e-9) ex = { e, f: k.f }; });
+  const mu = metricaCorte(vp, cut.c + ex.e);
+  const nOk = vp.filter(p => !p.fora).length, nFo = vp.filter(p => p.fora).length;
+  let gb = null; for (let l = 0.45; l <= 0.901; l += 0.05) { const k = f1Grupos(rowsG, S, l, 'train'); if (!gb || k.f > gb.f + 1e-9) gb = { l, f: k.f }; }
+  const gv = f1Grupos(rowsG, S, gb.l, 'val'), g62 = f1Grupos(rowsG, S, 0.62, 'val'), gtxt = f1Grupos(rowsG, S, 0.62, 'val', true);
+  const pc = x => Math.round(x * 100) + '%', aucs = modos.map(m => m + ' ' + aucDe(va(m)).toFixed(2)).join(' · ');
+  const erros = vp.filter(p => (p.s < cut.c + ex.e) !== p.fora).map(p => '      ' + (p.fora ? 'não pegou' : 'zerou boa') + ': ' + p.r.resposta + ' (' + pc(p.s) + ') em "' + p.r.secao_id + '"').slice(0, 10);
+  const score = (aucDe(va(best.m)) + gv.f) / 2;
+  const txt = '  Relevância — método escolhido no treino: ' + best.m + ' (separação treino ' + best.a.toFixed(2) + ' → validação ' + aucDe(va(best.m)).toFixed(2) + '), corte ' + pc(cut.c) + '\n' +
+    '    validação (' + vp.length + ' respostas, ' + nFo + ' fora): pega ' + pc(mv.R) + ' do fora, anula ' + mv.fp + ' de ' + nOk + ' boas\n' +
+    '    com regra de ideia única (corte ' + pc(cut.c + ex.e) + ', extra ' + pc(ex.e) + ' escolhido no treino): pega ' + pc(mu.R) + ', zera ' + mu.fp + ' boas\n' +
+    '    separação na validação por método: ' + aucs + '\n' + (erros.length ? '    erros (regra de ideia única):\n' + erros.join('\n') + '\n' : '') +
+    '  Agrupamento — limiar escolhido no treino: ' + pc(gb.l) + ' → validação F1 ' + gv.f.toFixed(2) + ' (precisão ' + pc(gv.P) + ', revocação ' + pc(gv.R) + ')\n' +
+    '    com 62% fixo: F1 ' + g62.f.toFixed(2) + ' · só texto, sem modelo: F1 ' + gtxt.f.toFixed(2) + '\n' +
+    '  NOTA GERAL: ' + score.toFixed(2) + '\n';
+  return { txt, score, modo: best.m, corte: cut.c, extra: ex.e, limiar: gb.l };
+}
+async function rodarLab() {
+  const out = $('cal-out'); CAL.corte = CAL.limiar = CAL.modo = CAL.modelo = CAL.extra = null; $('btn-cal-aplicar').disabled = true;
+  if (!LAB) { out.textContent = 'Base do laboratório não incluída nesta versão.'; return; }
+  const ids = Array.from(document.querySelectorAll('.lab-modelo:checked')).map(c => c.value);
+  if (!ids.length) { out.textContent = 'Marque ao menos um modelo.'; return; }
+  let txt = 'LABORATÓRIO — ' + LAB.rel.length + ' respostas de relevância, ' + LAB.grp.length + ' perguntas de agrupamento (treino × validação)\n\n', melhor = null;
+  for (const id of ids) {
+    const nome = SEM_MODELOS[id].nome; out.textContent = txt + '⏳ ' + nome + ': carregando (o 1º uso baixa o modelo)…';
+    let S; try { S = { embed: await CRIAR.fn(id), vecs: new Map(), ctx: new Map(), offVecs: null }; } catch (e) { txt += nome + '\n  indisponível: ' + String((e && e.message) || e).slice(0, 80) + '\n\n'; continue; }
+    out.textContent = txt + '⏳ ' + nome + ': calculando…';
+    try { const r = await labAvaliar(S); txt += nome + '\n' + r.txt + '\n'; if (!melhor || r.score > melhor.score) melhor = Object.assign({ id }, r); }
+    catch (e) { txt += nome + '\n  erro: ' + String((e && e.message) || e).slice(0, 80) + '\n\n'; }
+  }
+  if (melhor) { txt += '→ MELHOR: ' + SEM_MODELOS[melhor.id].nome + ' (nota ' + melhor.score.toFixed(2) + ')\n'; CAL.corte = melhor.corte; CAL.limiar = melhor.limiar; CAL.modo = melhor.modo; CAL.modelo = melhor.id; CAL.extra = melhor.extra; $('btn-cal-aplicar').disabled = false; }
+  out.textContent = txt;
+}
+// preenche as caixas de calibração com as correções reais do mediador na sala atual
+function importarDaSala() {
+  const rel = [], grp = [], blocos = new Map();
+  M.proc.forEach(r => {
+    if (r.pontos == null) return;
+    const tema = [r.secao_titulo, r.pergunta].filter(Boolean).join('. ');
+    if (r.invalida) rel.push(tema + ' | ' + r.resposta + ' | fora'); else if (!r.fora) rel.push(tema + ' | ' + r.resposta + ' | ok');
+    if (!r.invalida && !r.fora && r.cluster) { const k = r.secao_id + '|' + r.pergunta_idx; if (!blocos.has(k)) blocos.set(k, []); blocos.get(k).push(r.cluster + ' | ' + r.resposta); }
+  });
+  blocos.forEach(b => { if (b.length >= 3) grp.push(b.join('\n')); });
+  $('cal-rel').value = rel.join('\n'); $('cal-grp').value = grp.join('\n\n');
+  toast(rel.length + ' respostas e ' + grp.length + ' perguntas importadas. Use "Calcular".');
+}
 async function calibrar() {
   const out = $('cal-out'); CAL.corte = CAL.limiar = null; $('btn-cal-aplicar').disabled = true;
   if (Sem.estado !== 'pronto') { out.textContent = 'O modelo semântico ainda não carregou.'; return; }
@@ -1363,6 +1484,8 @@ async function calibrar() {
       if (!melhorGeral || auc > melhorGeral.auc + 1e-9) melhorGeral = { modo, auc, c: melhor.c, pts };
     });
     txt += '  → melhor método: ' + melhorGeral.modo + ' (corte ' + Math.round(melhorGeral.c * 100) + '%)\n';
+    { const cu = melhorGeral.c + M.relUnicaExtra, foP = melhorGeral.pts.filter(p => p.r.fora), okP = melhorGeral.pts.filter(p => !p.r.fora);
+      txt += '  regra de ideia única (corte ' + Math.round(cu * 100) + '%): pega ' + foP.filter(p => p.s < cu).length + ' de ' + foP.length + ' fora e zera ' + okP.filter(p => p.s < cu).length + ' de ' + okP.length + ' respostas boas (pior caso: todas únicas)\n'; }
     const erros = melhorGeral.pts.filter(p => (p.s < melhorGeral.c) !== p.r.fora).map(p => '    ' + (p.r.fora ? 'NÃO PEGOU' : 'ANULOU BOA') + ': ' + p.r.resposta + ' (' + Math.round(p.s * 100) + '%) em "' + p.r.secao_id + '"');
     if (erros.length) txt += '  erros no melhor método:\n' + erros.join('\n') + '\n';
     CAL.corte = melhorGeral.c; CAL.modo = melhorGeral.modo;
@@ -1668,12 +1791,17 @@ function iniciarMed() {
   $('btn-editar').addEventListener('click', abrirEditor);
   $('btn-apresentar').addEventListener('click', () => { document.body.classList.add('apresentacao'); $('btn-sair-apres').hidden = false; });
   $('btn-sair-apres').addEventListener('click', () => { document.body.classList.remove('apresentacao'); $('btn-sair-apres').hidden = true; });
+  $('btn-lab').addEventListener('click', async () => { try { await rodarLab(); } catch (e) { $('cal-out').textContent = 'Erro: ' + e.message; } });
+  $('btn-cal-importar').addEventListener('click', importarDaSala);
   $('btn-cal-ex').addEventListener('click', () => { $('cal-rel').value = CAL_REL; $('cal-grp').value = CAL_GRP; });
   $('btn-cal').addEventListener('click', async () => { $('cal-out').textContent = 'Calculando…'; try { await calibrar(); } catch (e) { $('cal-out').textContent = 'Erro: ' + e.message; } });
   $('btn-cal-aplicar').addEventListener('click', async () => {
+    if (CAL.extra != null) M.relUnicaExtra = CAL.extra;
     if (CAL.corte != null) { M.relevancia = CAL.corte; M.relModo = CAL.modo; $('modo-rel').textContent = CAL.modo; $('slider-rel').value = Math.round(CAL.corte * 100); $('val-rel').textContent = Math.round(CAL.corte * 100); }
     if (CAL.limiar != null) { M.limiar = CAL.limiar; $('slider-sim').value = Math.round(CAL.limiar * 100); $('val-sim').textContent = Math.round(CAL.limiar * 100); }
-    toast('Valores aplicados nesta sessão.'); await recarregarRows();
+    if (CAL.modelo && CAL.modelo !== modeloAtual()) { LS.set('bio_modelo', CAL.modelo); toast('Valores aplicados. O modelo ' + SEM_MODELOS[CAL.modelo].nome + ' vale a partir da próxima vez que abrir o painel.', 6000); }
+    else toast('Valores aplicados nesta sessão.');
+    await recarregarRows();
   });
   $('slider-rel').addEventListener('input', () => { $('val-rel').textContent = $('slider-rel').value; });
   $('slider-rel').addEventListener('change', async () => { M.relevancia = parseInt($('slider-rel').value, 10) / 100; await recarregarRows(); });
@@ -1795,7 +1923,7 @@ function iniciar() {
   iniciarPart(); iniciarMed(); iniciarGeral();
 }
 window.addEventListener('hashchange', () => { definirModo(); });
-window.__BIO = { Sem, Motor, M, P, G, rpc };
+window.__BIO = { Sem, CRIAR, Motor, M, P, G, rpc };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
 </script>
 </body>
