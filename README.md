@@ -1,3 +1,25 @@
+# BioInova STOP! — versão 4 (final para a oficina)
+
+## O que mudou na v4
+- **Desempate por tempo de resposta.** Ordem do ranking: pontos → menor tempo → apelido. O tempo é medido por seção: quantos segundos depois do 1º envio da seção a pessoa terminou (quem não respondeu conta o pior tempo da seção). Só entra quando há empate de pontos; aparece no painel como "desempate 3,2 s". Atenção: depende do sinal do celular, por isso é apenas desempate.
+- **Respostas "R" e "C" agora valem** (antes eram recusadas por ter 1 letra).
+- **Modelo 100% automático.** O monitor não escolhe nada: o app usa o modelo calibrado (MPNet), troca sozinho para o menor (MiniLM) em aparelho com pouca memória ou se o principal falhar, e cai para análise só por texto se nada carregar. Mostra apenas "preparando (xx%)" e "análise ativa".
+- **Limpeza automática de downloads antigos** do modelo (Cache Storage) assim que o modelo em uso carrega. No modo desenvolvedor há o botão "🧹 Limpar downloads antigos".
+- **Pré-aquecimento:** os vetores das respostas são calculados durante a rodada, então o resultado sai mais rápido ao encerrar.
+- **Laboratório com teste final:** +285 respostas de relevância (19 temas novos, frases, erros de digitação) e +29 perguntas de agrupamento que nunca são usadas para escolher parâmetros; a nota geral agora vem desse teste.
+
+## Como atualizar (quem já tem a v3 rodando)
+1. Supabase → SQL Editor → cole `supabase_migracao_v4.sql` → Run. **Não apaga dados.**
+2. Troque o `index.html` no GitHub (commit). Aguarde 1 min e recarregue (Ctrl+F5).
+Instalação do zero: use `supabase_setup.sql` (apaga tudo) e depois o `index.html`.
+
+## Antes da oficina
+- Abra o painel do monitor **uma vez com internet boa** (o modelo baixa só neste aparelho e fica guardado).
+- Troque a senha geral `AdminPET-troque` e o convite `PET2026` em `#admin`.
+- Faça um ensaio (botão "Simular turma" no modo `#dev`) e depois "Remover simulados".
+
+---
+
 # BioInova STOP! — v3 (várias salas, um monitor por sala)
 
 Arquivos: `index.html` (o app) + `supabase_setup.sql` (banco). Publicação: GitHub Pages
